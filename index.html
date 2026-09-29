@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Digital Speedometer</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: rgba(255, 255, 255, 0.03);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --neon-color: #00ffcc;
+            --neon-glow: rgba(0, 255, 204, 0.5);
+            --text-main: #ffffff;
+            --text-muted: #8b949e;
+            --danger: #ff4444;
+            --success: #00ffcc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .dashboard {
+            width: 100%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--panel-border);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Gauge Area */
+        .gauge-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 320px;
+            height: auto;
+            display: block;
+        }
+
+        .speed-display {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            top: 55%;
+            transform: translateY(-50%);
+        }
+
+        .speed-value {
+            font-size: 4.5rem;
+            font-weight: 800;
+            line-height: 1;
+            text-shadow: 0 0 20px var(--neon-glow);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .speed-unit {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 5px;
+        }
+
+        /* Controls Area */
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Inputs & Sliders */
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--neon-color);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--neon-glow);
+        }
+
+        input[type="number"] {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--panel-border);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            width: 80px;
+            text-align: right;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--neon-color);
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-gps {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: 1px solid var(--panel-border);
+        }
+
+        .btn-gps.active {
+            background: rgba(0, 255, 204, 0.1);
+            color: var(--neon-color);
+            border-color: var(--neon-color);
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+        }
+
+        /* Status & Info */
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .status-badge.active { background: rgba(0, 255, 204, 0.15); color: var(--success); }
+        .status-badge.error { background: rgba(255, 68, 68, 0.15); color: var(--danger); }
+
+        .rpm-display {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--panel-border);
+        }
+
+        .rpm-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--neon-color);
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .disabled-overlay {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <div class="panel">
+            <div class="gauge-container">
+                <canvas id="gaugeCanvas"></canvas>
+                <div class="speed-display">
+                    <div class="speed-value" id="speedText">0</div>
+                    <div class="speed-unit">km/h</div>
+                </div>
+            </div>
+
+            <button class="btn btn-gps" id="btnGps">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+                GPS-Tracking aktivieren
+            </button>
+            <div style="text-align: center; margin-top: 10px;">
+                <span class="status-badge" id="gpsStatus">Inaktiv</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="control-group" id="manualControls">
+                <div class="label-row">
+                    <span>Manuelle Steuerung (Test)</span>
+                    <input type="number" id="speedInput" value="0" min="0" max="200" step="0.1">
+                </div>
+                <input type="range" id="speedSlider" min="0" max="200" value="0" step="0.1">
+            </div>
+
+            <div class="control-group">
+                <div class="label-row">
+                    <span>Reifengröße (Zoll)</span>
+                    <input type="number" id="tireSize" value="10" min="1" max="50" step="0.1" title="Z.B. 10 für E-Scooter, 28 für Fahrräder">
+                </div>
+            </div>
+
+            <div class="rpm-display">
+                <span style="color: var(--text-muted); font-size: 0.9rem;">Rad-Drehzahl</span>
+                <div class="rpm-value"><span id="rpmText">0</span> <span style="font-size: 1rem;">RPM</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const canvas = document.getElementById('gaugeCanvas');
+        const ctx = canvas.getContext('2d');
+        const speedText = document.getElementById('speedText');
+        const speedInput = document.getElementById('speedInput');
+        const speedSlider = document.getElementById('speedSlider');
+        const tireSizeInput = document.getElementById('tireSize');
+        const rpmText = document.getElementById('rpmText');
+        const btnGps = document.getElementById('btnGps');
+        const gpsStatus = document.getElementById('gpsStatus');
+        const manualControls = document.getElementById('manualControls');
+
+        // State
+        let currentSpeed = 0; // Visual speed for smooth animation
+        let targetSpeed = 0;  // Actual speed from GPS or Slider
+        const MAX_SPEED = 200;
+        let isGpsActive = false;
+        let watchId = null;
+
+        // Canvas Setup
+        const size = 320;
+        canvas.width = size;
+        canvas.height = size;
+        const cx = size / 2;
+        const cy = size / 2;
+        const radius = size / 2 - 20;
+        const startAngle = Math.PI * 0.75;
+        const endAngle = Math.PI * 2.25;
+
+        // Animation Loop
+        function animate() {
+            // Smooth interpolation
+            currentSpeed += (targetSpeed - currentSpeed) * 0.1;
+            
+            drawGauge(currentSpeed);
+            updateSpeedTexts(currentSpeed);
+            updateRPM(targetSpeed);
+            
+            requestAnimationFrame(animate);
+        }
+
+        // Draw Gauge
+        function drawGauge(speed) {
+            ctx.clearRect(0, 0, size, size);
+
+            // Background Arc
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, startAngle, endAngle);
+            ctx.lineWidth = 18;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Progress
+            const progress = Math.max(0, Math.min(speed / MAX_SPEED, 1));
+            const currentAngle = startAngle + (endAngle - startAngle) * progress;
+
+            if (progress > 0) {
+                // Foreground Arc (Neon)
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, startAngle, currentAngle);
+                ctx.lineWidth = 18;
+                
+                // Gradient for Arc
+                const gradient = ctx.createLinearGradient(0, size, size, 0);
+                gradient.addColorStop(0, '#00ffcc');
+                gradient.addColorStop(1, '#00bfff');
+                
+                ctx.strokeStyle = gradient;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#00ffcc';
+                ctx.stroke();
+                ctx.shadowBlur = 0; // Reset
+            }
+
+            // Needle indicator (small dot at the edge)
+            const nx = cx + radius * Math.cos(currentAngle);
+            const ny = cy + radius * Math.sin(currentAngle);
+            
+            ctx.beginPath();
+            ctx.arc(nx, ny, 6, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#ffffff';
+            ctx.fill();
+            ctx.shadowBlur = 0; // Reset
+        }
+
+        function updateSpeedTexts(speed) {
+            speedText.textContent = Math.round(speed);
+        }
+
+        // RPM Calculation
+        function updateRPM(speedKmh) {
+            const tireSizeInches = parseFloat(tireSizeInput.value) || 10;
+            if (speedKmh <= 0) {
+                rpmText.textContent = "0";
+                return;
+            }
+            // Formel: RPM = (km/h * 1000 / 60) / (PI * Reifengröße * 0.0254)
+            const metersPerMinute = (speedKmh * 1000) / 60;
+            const wheelCircumferenceMeters = Math.PI * tireSizeInches * 0.0254;
+            const rpm = metersPerMinute / wheelCircumferenceMeters;
+            
+            rpmText.textContent = Math.round(rpm);
+        }
+
+        // Set speed manually from UI
+        function setManualSpeed(val) {
+            if (isGpsActive) return;
+            let valNum = parseFloat(val) || 0;
+            valNum = Math.min(Math.max(valNum, 0), MAX_SPEED);
+            targetSpeed = valNum;
+            speedInput.value = valNum;
+            speedSlider.value = valNum;
+        }
+
+        // Event Listeners for Manual Control
+        speedSlider.addEventListener('input', (e) => setManualSpeed(e.target.value));
+        speedInput.addEventListener('input', (e) => setManualSpeed(e.target.value));
+        tireSizeInput.addEventListener('input', () => updateRPM(targetSpeed));
+
+        // GPS Logic
+        function toggleGPS() {
+            if (!isGpsActive) {
+                startGPS();
+            } else {
+                stopGPS();
+            }
+        }
+
+        function startGPS() {
+            if (!("geolocation" in navigator)) {
+                alert("Geolokalisierung wird von diesem Browser nicht unterstützt.");
+                return;
+            }
+
+            btnGps.classList.add('active');
+            btnGps.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg> GPS-Tracking beenden';
+            gpsStatus.textContent = "Suche Signal...";
+            gpsStatus.className = "status-badge";
+            manualControls.classList.add('disabled-overlay');
+            isGpsActive = true;
+
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const speedMs = position.coords.speed; // meters per second
+                    // Wenn GPS-Speed null ist (z.B. im Stand), setze auf 0
+                    const currentKmh = speedMs !== null ? (speedMs * 3.6) : 0;
+                    
+                    targetSpeed = Math.min(currentKmh, MAX_SPEED);
+                    
+                    // Update Status
+                    const accuracy = position.coords.accuracy ? Math.round(position.coords.accuracy) : '--';
+                    gpsStatus.textContent = `Verbunden (±${accuracy}m)`;
+                    gpsStatus.className = "status-badge active";
+                },
+                (error) => {
+                    let msg = "GPS Fehler";
+                    if (error.code === 1) msg = "GPS Zugriff verweigert";
+                    if (error.code === 2) msg = "Kein Signal gefunden";
+                    if (error.code === 3) msg = "Zeitüberschreitung";
+                    
+                    gpsStatus.textContent = msg;
+                    gpsStatus.className = "status-badge error";
+                },
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 5000
+                }
+            );
+        }
+
+        function stopGPS() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            btnGps.classList.remove('active');
+            btnGps.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg> GPS-Tracking aktivieren';
+            gpsStatus.textContent = "Inaktiv";
+            gpsStatus.className = "status-badge";
+            manualControls.classList.remove('disabled-overlay');
+            isGpsActive = false;
+            
+            // Speed sanft zurück auf Slider-Wert fahren
+            targetSpeed = parseFloat(speedSlider.value) || 0;
+        }
+
+        btnGps.addEventListener('click', toggleGPS);
+
+        // Start Animation Loop
+        animate();
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Digital Speedometer</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: rgba(255, 255, 255, 0.03);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --neon-color: #00ffcc;
+            --neon-glow: rgba(0, 255, 204, 0.5);
+            --text-main: #ffffff;
+            --text-muted: #8b949e;
+            --danger: #ff4444;
+            --success: #00ffcc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .dashboard {
+            width: 100%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--panel-border);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Gauge Area */
+        .gauge-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 320px;
+            height: auto;
+            display: block;
+        }
+
+        .speed-display {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            top: 55%;
+            transform: translateY(-50%);
+        }
+
+        .speed-value {
+            font-size: 4.5rem;
+            font-weight: 800;
+            line-height: 1;
+            text-shadow: 0 0 20px var(--neon-glow);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .speed-unit {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 5px;
+        }
+
+        /* Controls Area */
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Inputs & Sliders */
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--neon-color);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--neon-glow);
+        }
+
+        input[type="number"] {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--panel-border);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            width: 80px;
+            text-align: right;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--neon-color);
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-gps {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: 1px solid var(--panel-border);
+        }
+
+        .btn-gps.active {
+            background: rgba(0, 255, 204, 0.1);
+            color: var(--neon-color);
+            border-color: var(--neon-color);
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+        }
+
+        /* Status & Info */
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .status-badge.active { background: rgba(0, 255, 204, 0.15); color: var(--success); }
+        .status-badge.error { background: rgba(255, 68, 68, 0.15); color: var(--danger); }
+
+        .rpm-display {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--panel-border);
+        }
+
+        .rpm-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--neon-color);
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .disabled-overlay {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <div class="panel">
+            <div class="gauge-container">
+                <canvas id="gaugeCanvas"></canvas>
+                <div class="speed-display">
+                    <div class="speed-value" id="speedText">0</div>
+                    <div class="speed-unit">km/h</div>
+                </div>
+            </div>
+
+            <button class="btn btn-gps" id="btnGps">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+                GPS-Tracking aktivieren
+            </button>
+            <div style="text-align: center; margin-top: 10px;">
+                <span class="status-badge" id="gpsStatus">Inaktiv</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="control-group" id="manualControls">
+                <div class="label-row">
+                    <span>Manuelle Steuerung (Test)</span>
+                    <input type="number" id="speedInput" value="0" min="0" max="200" step="0.1">
+                </div>
+                <input type="range" id="speedSlider" min="0" max="200" value="0" step="0.1">
+            </div>
+
+            <div class="control-group">
+                <div class="label-row">
+                    <span>Reifengröße (Zoll)</span>
+                    <input type="number" id="tireSize" value="10" min="1" max="50" step="0.1" title="Z.B. 10 für E-Scooter, 28 für Fahrräder">
+                </div>
+            </div>
+
+            <div class="rpm-display">
+                <span style="color: var(--text-muted); font-size: 0.9rem;">Rad-Drehzahl</span>
+                <div class="rpm-value"><span id="rpmText">0</span> <span style="font-size: 1rem;">RPM</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const canvas = document.getElementById('gaugeCanvas');
+        const ctx = canvas.getContext('2d');
+        const speedText = document.getElementById('speedText');
+        const speedInput = document.getElementById('speedInput');
+        const speedSlider = document.getElementById('speedSlider');
+        const tireSizeInput = document.getElementById('tireSize');
+        const rpmText = document.getElementById('rpmText');
+        const btnGps = document.getElementById('btnGps');
+        const gpsStatus = document.getElementById('gpsStatus');
+        const manualControls = document.getElementById('manualControls');
+
+        // State
+        let currentSpeed = 0; // Visual speed for smooth animation
+        let targetSpeed = 0;  // Actual speed from GPS or Slider
+        const MAX_SPEED = 200;
+        let isGpsActive = false;
+        let watchId = null;
+
+        // Canvas Setup
+        const size = 320;
+        canvas.width = size;
+        canvas.height = size;
+        const cx = size / 2;
+        const cy = size / 2;
+        const radius = size / 2 - 20;
+        const startAngle = Math.PI * 0.75;
+        const endAngle = Math.PI * 2.25;
+
+        // Animation Loop
+        function animate() {
+            // Smooth interpolation
+            currentSpeed += (targetSpeed - currentSpeed) * 0.1;
+            
+            drawGauge(currentSpeed);
+            updateSpeedTexts(currentSpeed);
+            updateRPM(targetSpeed);
+            
+            requestAnimationFrame(animate);
+        }
+
+        // Draw Gauge
+        function drawGauge(speed) {
+            ctx.clearRect(0, 0, size, size);
+
+            // Background Arc
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, startAngle, endAngle);
+            ctx.lineWidth = 18;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Progress
+            const progress = Math.max(0, Math.min(speed / MAX_SPEED, 1));
+            const currentAngle = startAngle + (endAngle - startAngle) * progress;
+
+            if (progress > 0) {
+                // Foreground Arc (Neon)
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, startAngle, currentAngle);
+                ctx.lineWidth = 18;
+                
+                // Gradient for Arc
+                const gradient = ctx.createLinearGradient(0, size, size, 0);
+                gradient.addColorStop(0, '#00ffcc');
+                gradient.addColorStop(1, '#00bfff');
+                
+                ctx.strokeStyle = gradient;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#00ffcc';
+                ctx.stroke();
+                ctx.shadowBlur = 0; // Reset
+            }
+
+            // Needle indicator (small dot at the edge)
+            const nx = cx + radius * Math.cos(currentAngle);
+            const ny = cy + radius * Math.sin(currentAngle);
+            
+            ctx.beginPath();
+            ctx.arc(nx, ny, 6, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#ffffff';
+            ctx.fill();
+            ctx.shadowBlur = 0; // Reset
+        }
+
+        function updateSpeedTexts(speed) {
+            speedText.textContent = Math.round(speed);
+        }
+
+        // RPM Calculation
+        function updateRPM(speedKmh) {
+            const tireSizeInches = parseFloat(tireSizeInput.value) || 10;
+            if (speedKmh <= 0) {
+                rpmText.textContent = "0";
+                return;
+            }
+            // Formel: RPM = (km/h * 1000 / 60) / (PI * Reifengröße * 0.0254)
+            const metersPerMinute = (speedKmh * 1000) / 60;
+            const wheelCircumferenceMeters = Math.PI * tireSizeInches * 0.0254;
+            const rpm = metersPerMinute / wheelCircumferenceMeters;
+            
+            rpmText.textContent = Math.round(rpm);
+        }
+
+        // Set speed manually from UI
+        function setManualSpeed(val) {
+            if (isGpsActive) return;
+            let valNum = parseFloat(val) || 0;
+            valNum = Math.min(Math.max(valNum, 0), MAX_SPEED);
+            targetSpeed = valNum;
+            speedInput.value = valNum;
+            speedSlider.value = valNum;
+        }
+
+        // Event Listeners for Manual Control
+        speedSlider.addEventListener('input', (e) => setManualSpeed(e.target.value));
+        speedInput.addEventListener('input', (e) => setManualSpeed(e.target.value));
+        tireSizeInput.addEventListener('input', () => updateRPM(targetSpeed));
+
+        // GPS Logic
+        function toggleGPS() {
+            if (!isGpsActive) {
+                startGPS();
+            } else {
+                stopGPS();
+            }
+        }
+
+        function startGPS() {
+            if (!("geolocation" in navigator)) {
+                alert("Geolokalisierung wird von diesem Browser nicht unterstützt.");
+                return;
+            }
+
+            btnGps.classList.add('active');
+            btnGps.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg> GPS-Tracking beenden';
+            gpsStatus.textContent = "Suche Signal...";
+            gpsStatus.className = "status-badge";
+            manualControls.classList.add('disabled-overlay');
+            isGpsActive = true;
+
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const speedMs = position.coords.speed; // meters per second
+                    // Wenn GPS-Speed null ist (z.B. im Stand), setze auf 0
+                    const currentKmh = speedMs !== null ? (speedMs * 3.6) : 0;
+                    
+                    targetSpeed = Math.min(currentKmh, MAX_SPEED);
+                    
+                    // Update Status
+                    const accuracy = position.coords.accuracy ? Math.round(position.coords.accuracy) : '--';
+                    gpsStatus.textContent = `Verbunden (±${accuracy}m)`;
+                    gpsStatus.className = "status-badge active";
+                },
+                (error) => {
+                    let msg = "GPS Fehler";
+                    if (error.code === 1) msg = "GPS Zugriff verweigert";
+                    if (error.code === 2) msg = "Kein Signal gefunden";
+                    if (error.code === 3) msg = "Zeitüberschreitung";
+                    
+                    gpsStatus.textContent = msg;
+                    gpsStatus.className = "status-badge error";
+                },
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 5000
+                }
+            );
+        }
+
+        function stopGPS() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            btnGps.classList.remove('active');
+            btnGps.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg> GPS-Tracking aktivieren';
+            gpsStatus.textContent = "Inaktiv";
+            gpsStatus.className = "status-badge";
+            manualControls.classList.remove('disabled-overlay');
+            isGpsActive = false;
+            
+            // Speed sanft zurück auf Slider-Wert fahren
+            targetSpeed = parseFloat(speedSlider.value) || 0;
+        }
+
+        btnGps.addEventListener('click', toggleGPS);
+
+        // Start Animation Loop
+        animate();
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Digital Speedometer</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: rgba(255, 255, 255, 0.03);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --neon-color: #00ffcc;
+            --neon-glow: rgba(0, 255, 204, 0.5);
+            --text-main: #ffffff;
+            --text-muted: #8b949e;
+            --danger: #ff4444;
+            --success: #00ffcc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .dashboard {
+            width: 100%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--panel-border);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Gauge Area */
+        .gauge-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 320px;
+            height: auto;
+            display: block;
+        }
+
+        .speed-display {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            top: 55%;
+            transform: translateY(-50%);
+        }
+
+        .speed-value {
+            font-size: 4.5rem;
+            font-weight: 800;
+            line-height: 1;
+            text-shadow: 0 0 20px var(--neon-glow);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .speed-unit {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 5px;
+        }
+
+        /* Controls Area */
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Inputs & Sliders */
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--neon-color);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--neon-glow);
+        }
+
+        input[type="number"] {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--panel-border);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            width: 80px;
+            text-align: right;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--neon-color);
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-gps {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: 1px solid var(--panel-border);
+        }
+
+        .btn-gps.active {
+            background: rgba(0, 255, 204, 0.1);
+            color: var(--neon-color);
+            border-color: var(--neon-color);
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+        }
+
+        /* Status & Info */
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .status-badge.active { background: rgba(0, 255, 204, 0.15); color: var(--success); }
+        .status-badge.error { background: rgba(255, 68, 68, 0.15); color: var(--danger); }
+
+        .rpm-display {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--panel-border);
+        }
+
+        .rpm-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--neon-color);
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .disabled-overlay {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <div class="panel">
+            <div class="gauge-container">
+                <canvas id="gaugeCanvas"></canvas>
+                <div class="speed-display">
+                    <div class="speed-value" id="speedText">0</div>
+                    <div class="speed-unit">km/h</div>
+                </div>
+            </div>
+
+            <button class="btn btn-gps" id="btnGps">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+                GPS-Tracking aktivieren
+            </button>
+            <div style="text-align: center; margin-top: 10px;">
+                <span class="status-badge" id="gpsStatus">Inaktiv</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="control-group" id="manualControls">
+                <div class="label-row">
+                    <span>Manuelle Steuerung (Test)</span>
+                    <input type="number" id="speedInput" value="0" min="0" max="200" step="0.1">
+                </div>
+                <input type="range" id="speedSlider" min="0" max="200" value="0" step="0.1">
+            </div>
+
+            <div class="control-group">
+                <div class="label-row">
+                    <span>Reifengröße (Zoll)</span>
+                    <input type="number" id="tireSize" value="10" min="1" max="50" step="0.1" title="Z.B. 10 für E-Scooter, 28 für Fahrräder">
+                </div>
+            </div>
+
+            <div class="rpm-display">
+                <span style="color: var(--text-muted); font-size: 0.9rem;">Rad-Drehzahl</span>
+                <div class="rpm-value"><span id="rpmText">0</span> <span style="font-size: 1rem;">RPM</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const canvas = document.getElementById('gaugeCanvas');
+        const ctx = canvas.getContext('2d');
+        const speedText = document.getElementById('speedText');
+        const speedInput = document.getElementById('speedInput');
+        const speedSlider = document.getElementById('speedSlider');
+        const tireSizeInput = document.getElementById('tireSize');
+        const rpmText = document.getElementById('rpmText');
+        const btnGps = document.getElementById('btnGps');
+        const gpsStatus = document.getElementById('gpsStatus');
+        const manualControls = document.getElementById('manualControls');
+
+        // State
+        let currentSpeed = 0; // Visual speed for smooth animation
+        let targetSpeed = 0;  // Actual speed from GPS or Slider
+        const MAX_SPEED = 200;
+        let isGpsActive = false;
+        let watchId = null;
+
+        // Canvas Setup
+        const size = 320;
+        canvas.width = size;
+        canvas.height = size;
+        const cx = size / 2;
+        const cy = size / 2;
+        const radius = size / 2 - 20;
+        const startAngle = Math.PI * 0.75;
+        const endAngle = Math.PI * 2.25;
+
+        // Animation Loop
+        function animate() {
+            // Smooth interpolation
+            currentSpeed += (targetSpeed - currentSpeed) * 0.1;
+            
+            drawGauge(currentSpeed);
+            updateSpeedTexts(currentSpeed);
+            updateRPM(targetSpeed);
+            
+            requestAnimationFrame(animate);
+        }
+
+        // Draw Gauge
+        function drawGauge(speed) {
+            ctx.clearRect(0, 0, size, size);
+
+            // Background Arc
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, startAngle, endAngle);
+            ctx.lineWidth = 18;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Progress
+            const progress = Math.max(0, Math.min(speed / MAX_SPEED, 1));
+            const currentAngle = startAngle + (endAngle - startAngle) * progress;
+
+            if (progress > 0) {
+                // Foreground Arc (Neon)
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, startAngle, currentAngle);
+                ctx.lineWidth = 18;
+                
+                // Gradient for Arc
+                const gradient = ctx.createLinearGradient(0, size, size, 0);
+                gradient.addColorStop(0, '#00ffcc');
+                gradient.addColorStop(1, '#00bfff');
+                
+                ctx.strokeStyle = gradient;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#00ffcc';
+                ctx.stroke();
+                ctx.shadowBlur = 0; // Reset
+            }
+
+            // Needle indicator (small dot at the edge)
+            const nx = cx + radius * Math.cos(currentAngle);
+            const ny = cy + radius * Math.sin(currentAngle);
+            
+            ctx.beginPath();
+            ctx.arc(nx, ny, 6, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#ffffff';
+            ctx.fill();
+            ctx.shadowBlur = 0; // Reset
+        }
+
+        function updateSpeedTexts(speed) {
+            speedText.textContent = Math.round(speed);
+        }
+
+        // RPM Calculation
+        function updateRPM(speedKmh) {
+            const tireSizeInches = parseFloat(tireSizeInput.value) || 10;
+            if (speedKmh <= 0) {
+                rpmText.textContent = "0";
+                return;
+            }
+            // Formel: RPM = (km/h * 1000 / 60) / (PI * Reifengröße * 0.0254)
+            const metersPerMinute = (speedKmh * 1000) / 60;
+            const wheelCircumferenceMeters = Math.PI * tireSizeInches * 0.0254;
+            const rpm = metersPerMinute / wheelCircumferenceMeters;
+            
+            rpmText.textContent = Math.round(rpm);
+        }
+
+        // Set speed manually from UI
+        function setManualSpeed(val) {
+            if (isGpsActive) return;
+            let valNum = parseFloat(val) || 0;
+            valNum = Math.min(Math.max(valNum, 0), MAX_SPEED);
+            targetSpeed = valNum;
+            speedInput.value = valNum;
+            speedSlider.value = valNum;
+        }
+
+        // Event Listeners for Manual Control
+        speedSlider.addEventListener('input', (e) => setManualSpeed(e.target.value));
+        speedInput.addEventListener('input', (e) => setManualSpeed(e.target.value));
+        tireSizeInput.addEventListener('input', () => updateRPM(targetSpeed));
+
+        // GPS Logic
+        function toggleGPS() {
+            if (!isGpsActive) {
+                startGPS();
+            } else {
+                stopGPS();
+            }
+        }
+
+        function startGPS() {
+            if (!("geolocation" in navigator)) {
+                alert("Geolokalisierung wird von diesem Browser nicht unterstützt.");
+                return;
+            }
+
+            btnGps.classList.add('active');
+            btnGps.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg> GPS-Tracking beenden';
+            gpsStatus.textContent = "Suche Signal...";
+            gpsStatus.className = "status-badge";
+            manualControls.classList.add('disabled-overlay');
+            isGpsActive = true;
+
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const speedMs = position.coords.speed; // meters per second
+                    // Wenn GPS-Speed null ist (z.B. im Stand), setze auf 0
+                    const currentKmh = speedMs !== null ? (speedMs * 3.6) : 0;
+                    
+                    targetSpeed = Math.min(currentKmh, MAX_SPEED);
+                    
+                    // Update Status
+                    const accuracy = position.coords.accuracy ? Math.round(position.coords.accuracy) : '--';
+                    gpsStatus.textContent = `Verbunden (±${accuracy}m)`;
+                    gpsStatus.className = "status-badge active";
+                },
+                (error) => {
+                    let msg = "GPS Fehler";
+                    if (error.code === 1) msg = "GPS Zugriff verweigert";
+                    if (error.code === 2) msg = "Kein Signal gefunden";
+                    if (error.code === 3) msg = "Zeitüberschreitung";
+                    
+                    gpsStatus.textContent = msg;
+                    gpsStatus.className = "status-badge error";
+                },
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 5000
+                }
+            );
+        }
+
+        function stopGPS() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            btnGps.classList.remove('active');
+            btnGps.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg> GPS-Tracking aktivieren';
+            gpsStatus.textContent = "Inaktiv";
+            gpsStatus.className = "status-badge";
+            manualControls.classList.remove('disabled-overlay');
+            isGpsActive = false;
+            
+            // Speed sanft zurück auf Slider-Wert fahren
+            targetSpeed = parseFloat(speedSlider.value) || 0;
+        }
+
+        btnGps.addEventListener('click', toggleGPS);
+
+        // Start Animation Loop
+        animate();
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Digital Speedometer</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: rgba(255, 255, 255, 0.03);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --neon-color: #00ffcc;
+            --neon-glow: rgba(0, 255, 204, 0.5);
+            --text-main: #ffffff;
+            --text-muted: #8b949e;
+            --danger: #ff4444;
+            --success: #00ffcc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .dashboard {
+            width: 100%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--panel-border);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Gauge Area */
+        .gauge-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 320px;
+            height: auto;
+            display: block;
+        }
+
+        .speed-display {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            top: 55%;
+            transform: translateY(-50%);
+        }
+
+        .speed-value {
+            font-size: 4.5rem;
+            font-weight: 800;
+            line-height: 1;
+            text-shadow: 0 0 20px var(--neon-glow);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .speed-unit {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 5px;
+        }
+
+        /* Controls Area */
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Inputs & Sliders */
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--neon-color);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--neon-glow);
+        }
+
+        input[type="number"] {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--panel-border);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            width: 80px;
+            text-align: right;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--neon-color);
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-gps {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: 1px solid var(--panel-border);
+        }
+
+        .btn-gps.active {
+            background: rgba(0, 255, 204, 0.1);
+            color: var(--neon-color);
+            border-color: var(--neon-color);
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+        }
+
+        /* Status & Info */
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .status-badge.active { background: rgba(0, 255, 204, 0.15); color: var(--success); }
+        .status-badge.error { background: rgba(255, 68, 68, 0.15); color: var(--danger); }
+
+        .rpm-display {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--panel-border);
+        }
+
+        .rpm-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--neon-color);
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .disabled-overlay {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <div class="panel">
+            <div class="gauge-container">
+                <canvas id="gaugeCanvas"></canvas>
+                <div class="speed-display">
+                    <div class="speed-value" id="speedText">0</div>
+                    <div class="speed-unit">km/h</div>
+                </div>
+            </div>
+
+            <button class="btn btn-gps" id="btnGps">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+                GPS-Tracking aktivieren
+            </button>
+            <div style="text-align: center; margin-top: 10px;">
+                <span class="status-badge" id="gpsStatus">Inaktiv</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="control-group" id="manualControls">
+                <div class="label-row">
+                    <span>Manuelle Steuerung (Test)</span>
+                    <input type="number" id="speedInput" value="0" min="0" max="200" step="0.1">
+                </div>
+                <input type="range" id="speedSlider" min="0" max="200" value="0" step="0.1">
+            </div>
+
+            <div class="control-group">
+                <div class="label-row">
+                    <span>Reifengröße (Zoll)</span>
+                    <input type="number" id="tireSize" value="10" min="1" max="50" step="0.1" title="Z.B. 10 für E-Scooter, 28 für Fahrräder">
+                </div>
+            </div>
+
+            <div class="rpm-display">
+                <span style="color: var(--text-muted); font-size: 0.9rem;">Rad-Drehzahl</span>
+                <div class="rpm-value"><span id="rpmText">0</span> <span style="font-size: 1rem;">RPM</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const canvas = document.getElementById('gaugeCanvas');
+        const ctx = canvas.getContext('2d');
+        const speedText = document.getElementById('speedText');
+        const speedInput = document.getElementById('speedInput');
+        const speedSlider = document.getElementById('speedSlider');
+        const tireSizeInput = document.getElementById('tireSize');
+        const rpmText = document.getElementById('rpmText');
+        const btnGps = document.getElementById('btnGps');
+        const gpsStatus = document.getElementById('gpsStatus');
+        const manualControls = document.getElementById('manualControls');
+
+        // State
+        let currentSpeed = 0; // Visual speed for smooth animation
+        let targetSpeed = 0;  // Actual speed from GPS or Slider
+        const MAX_SPEED = 200;
+        let isGpsActive = false;
+        let watchId = null;
+
+        // Canvas Setup
+        const size = 320;
+        canvas.width = size;
+        canvas.height = size;
+        const cx = size / 2;
+        const cy = size / 2;
+        const radius = size / 2 - 20;
+        const startAngle = Math.PI * 0.75;
+        const endAngle = Math.PI * 2.25;
+
+        // Animation Loop
+        function animate() {
+            // Smooth interpolation
+            currentSpeed += (targetSpeed - currentSpeed) * 0.1;
+            
+            drawGauge(currentSpeed);
+            updateSpeedTexts(currentSpeed);
+            updateRPM(targetSpeed);
+            
+            requestAnimationFrame(animate);
+        }
+
+        // Draw Gauge
+        function drawGauge(speed) {
+            ctx.clearRect(0, 0, size, size);
+
+            // Background Arc
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, startAngle, endAngle);
+            ctx.lineWidth = 18;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Progress
+            const progress = Math.max(0, Math.min(speed / MAX_SPEED, 1));
+            const currentAngle = startAngle + (endAngle - startAngle) * progress;
+
+            if (progress > 0) {
+                // Foreground Arc (Neon)
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, startAngle, currentAngle);
+                ctx.lineWidth = 18;
+                
+                // Gradient for Arc
+                const gradient = ctx.createLinearGradient(0, size, size, 0);
+                gradient.addColorStop(0, '#00ffcc');
+                gradient.addColorStop(1, '#00bfff');
+                
+                ctx.strokeStyle = gradient;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#00ffcc';
+                ctx.stroke();
+                ctx.shadowBlur = 0; // Reset
+            }
+
+            // Needle indicator (small dot at the edge)
+            const nx = cx + radius * Math.cos(currentAngle);
+            const ny = cy + radius * Math.sin(currentAngle);
+            
+            ctx.beginPath();
+            ctx.arc(nx, ny, 6, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#ffffff';
+            ctx.fill();
+            ctx.shadowBlur = 0; // Reset
+        }
+
+        function updateSpeedTexts(speed) {
+            speedText.textContent = Math.round(speed);
+        }
+
+        // RPM Calculation
+        function updateRPM(speedKmh) {
+            const tireSizeInches = parseFloat(tireSizeInput.value) || 10;
+            if (speedKmh <= 0) {
+                rpmText.textContent = "0";
+                return;
+            }
+            // Formel: RPM = (km/h * 1000 / 60) / (PI * Reifengröße * 0.0254)
+            const metersPerMinute = (speedKmh * 1000) / 60;
+            const wheelCircumferenceMeters = Math.PI * tireSizeInches * 0.0254;
+            const rpm = metersPerMinute / wheelCircumferenceMeters;
+            
+            rpmText.textContent = Math.round(rpm);
+        }
+
+        // Set speed manually from UI
+        function setManualSpeed(val) {
+            if (isGpsActive) return;
+            let valNum = parseFloat(val) || 0;
+            valNum = Math.min(Math.max(valNum, 0), MAX_SPEED);
+            targetSpeed = valNum;
+            speedInput.value = valNum;
+            speedSlider.value = valNum;
+        }
+
+        // Event Listeners for Manual Control
+        speedSlider.addEventListener('input', (e) => setManualSpeed(e.target.value));
+        speedInput.addEventListener('input', (e) => setManualSpeed(e.target.value));
+        tireSizeInput.addEventListener('input', () => updateRPM(targetSpeed));
+
+        // GPS Logic
+        function toggleGPS() {
+            if (!isGpsActive) {
+                startGPS();
+            } else {
+                stopGPS();
+            }
+        }
+
+        function startGPS() {
+            if (!("geolocation" in navigator)) {
+                alert("Geolokalisierung wird von diesem Browser nicht unterstützt.");
+                return;
+            }
+
+            btnGps.classList.add('active');
+            btnGps.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg> GPS-Tracking beenden';
+            gpsStatus.textContent = "Suche Signal...";
+            gpsStatus.className = "status-badge";
+            manualControls.classList.add('disabled-overlay');
+            isGpsActive = true;
+
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const speedMs = position.coords.speed; // meters per second
+                    // Wenn GPS-Speed null ist (z.B. im Stand), setze auf 0
+                    const currentKmh = speedMs !== null ? (speedMs * 3.6) : 0;
+                    
+                    targetSpeed = Math.min(currentKmh, MAX_SPEED);
+                    
+                    // Update Status
+                    const accuracy = position.coords.accuracy ? Math.round(position.coords.accuracy) : '--';
+                    gpsStatus.textContent = `Verbunden (±${accuracy}m)`;
+                    gpsStatus.className = "status-badge active";
+                },
+                (error) => {
+                    let msg = "GPS Fehler";
+                    if (error.code === 1) msg = "GPS Zugriff verweigert";
+                    if (error.code === 2) msg = "Kein Signal gefunden";
+                    if (error.code === 3) msg = "Zeitüberschreitung";
+                    
+                    gpsStatus.textContent = msg;
+                    gpsStatus.className = "status-badge error";
+                },
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 5000
+                }
+            );
+        }
+
+        function stopGPS() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            btnGps.classList.remove('active');
+            btnGps.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg> GPS-Tracking aktivieren';
+            gpsStatus.textContent = "Inaktiv";
+            gpsStatus.className = "status-badge";
+            manualControls.classList.remove('disabled-overlay');
+            isGpsActive = false;
+            
+            // Speed sanft zurück auf Slider-Wert fahren
+            targetSpeed = parseFloat(speedSlider.value) || 0;
+        }
+
+        btnGps.addEventListener('click', toggleGPS);
+
+        // Start Animation Loop
+        animate();
+    </script>
+</body>
+</html>
