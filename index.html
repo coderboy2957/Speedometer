@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Stark VARG Full-Screen Dashboard</title>
+    <title>Stark VARG Dashboard - Light Edition</title>
     <!-- Stark VARG Style Font (Teko & Rajdhani) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,13 +11,15 @@
     
     <style>
         :root {
-            --bg-dark: #090b10;
-            --text-main: #ffffff;
+            --bg-main: #f1f5f9;
+            --text-main: #0f172a;
             --text-muted: #64748b;
-            --rpm-green: #00ff66;
-            --rpm-yellow: #ffcc00;
-            --rpm-red: #ff0033;
-            --panel-bg: rgba(15, 23, 42, 0.85);
+            /* Angepasste Farben für besseren Kontrast auf hellem Grund */
+            --rpm-green: #10b981; 
+            --rpm-yellow: #f59e0b;
+            --rpm-red: #ef4444;
+            --panel-bg: rgba(255, 255, 255, 0.95);
+            --border-color: #cbd5e1;
         }
 
         * {
@@ -29,7 +31,7 @@
         }
 
         body {
-            background-color: var(--bg-dark);
+            background-color: var(--bg-main);
             color: var(--text-main);
             width: 100vw;
             height: 100vh;
@@ -66,15 +68,14 @@
 
         .rpm-display-text {
             font-family: 'Teko', sans-serif;
-            font-size: 2.5rem;
+            font-size: 1.8rem; /* Normale Größe */
             line-height: 1;
             letter-spacing: 0.05em;
             color: var(--text-main);
-            text-shadow: 0 0 10px rgba(255,255,255,0.3);
         }
 
         .rpm-display-text span {
-            font-size: 1.5rem;
+            font-size: 1.1rem;
             color: var(--text-muted);
         }
 
@@ -125,27 +126,26 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-top: 10vh; /* Offset to sit nicely in the arc */
+            margin-top: 5vh;
         }
 
         .speed-number {
             font-family: 'Teko', sans-serif;
-            font-size: 30vmin; /* Responsive massive font */
+            font-size: 15vmin; /* Deutlich kleiner und aufgeräumter */
             font-weight: 700;
-            line-height: 0.75;
+            line-height: 0.8;
             color: var(--text-main);
-            text-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
             letter-spacing: -0.02em;
         }
 
         .speed-unit {
             font-family: 'Rajdhani', sans-serif;
-            font-size: 2.5vmin;
+            font-size: 3vmin;
             font-weight: 700;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.4em;
-            margin-top: 15px;
+            letter-spacing: 0.2em;
+            margin-top: 8px;
         }
 
         /* Bottom Status Bar */
@@ -160,7 +160,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 700;
             color: var(--text-muted);
             text-transform: uppercase;
@@ -168,26 +168,25 @@
         }
 
         .status-dot {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background: #334155;
-            box-shadow: 0 0 0 rgba(0,0,0,0);
+            background: var(--border-color);
             transition: all 0.3s;
         }
 
         .status-dot.active {
             background: var(--rpm-green);
-            box-shadow: 0 0 15px var(--rpm-green);
+            box-shadow: 0 0 8px var(--rpm-green);
         }
 
-        /* Settings Modal (Glassmorphism Dark) */
+        /* Settings Modal (Light Glassmorphism) */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -204,13 +203,14 @@
 
         .modal-content {
             background: var(--panel-bg);
-            border: 1px solid rgba(255,255,255,0.1);
-            width: 90vw; max-width: 450px;
-            border-radius: 24px;
-            padding: 30px;
-            display: flex; flex-direction: column; gap: 25px;
+            border: 1px solid #ffffff;
+            width: 90vw; max-width: 420px;
+            border-radius: 20px;
+            padding: 25px;
+            display: flex; flex-direction: column; gap: 20px;
             transform: scale(0.95);
             transition: transform 0.3s;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
         }
 
         .modal-overlay.open .modal-content { transform: scale(1); }
@@ -221,72 +221,76 @@
 
         .modal-header h3 {
             font-family: 'Teko', sans-serif;
-            font-size: 2.2rem;
+            font-size: 2rem;
             letter-spacing: 0.05em;
             color: var(--text-main);
         }
 
         .close-btn {
-            background: rgba(255,255,255,0.1);
-            border: none; color: #fff;
-            width: 36px; height: 36px; border-radius: 50%;
-            font-size: 1.2rem; cursor: pointer;
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            width: 32px; height: 32px; border-radius: 50%;
+            font-size: 1.1rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
         }
 
-        .setting-group { display: flex; flex-direction: column; gap: 10px; }
+        .setting-group { display: flex; flex-direction: column; gap: 8px; }
         .setting-row { display: flex; justify-content: space-between; align-items: center; }
         .setting-row span, .setting-group label {
-            font-size: 1.1rem; font-weight: 600; color: #cbd5e1;
+            font-size: 1rem; font-weight: 700; color: var(--text-main);
         }
 
         input[type="range"] {
-            width: 100%; height: 6px; background: #334155;
+            width: 100%; height: 6px; background: var(--border-color);
             border-radius: 3px; outline: none; -webkit-appearance: none;
         }
         input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 20px; height: 20px;
-            background: #fff; border-radius: 50%; cursor: pointer;
-            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+            -webkit-appearance: none; width: 18px; height: 18px;
+            background: var(--text-main); border-radius: 50%; cursor: pointer;
         }
 
         select, input[type="number"] {
-            background: rgba(0,0,0,0.5); border: 1px solid #475569;
-            color: #fff; padding: 12px; border-radius: 12px;
-            font-size: 1.1rem; font-family: 'Rajdhani', sans-serif;
+            background: #ffffff; border: 1px solid var(--border-color);
+            color: var(--text-main); padding: 10px; border-radius: 10px;
+            font-size: 1rem; font-family: 'Rajdhani', sans-serif;
             font-weight: 600; outline: none;
         }
 
         .btn-primary {
-            background: #fff; color: #000; border: none;
-            padding: 16px; border-radius: 12px; font-family: 'Rajdhani', sans-serif;
-            font-weight: 700; font-size: 1.2rem; cursor: pointer;
-            text-transform: uppercase; letter-spacing: 0.1em;
+            background: var(--text-main); color: #ffffff; border: none;
+            padding: 14px; border-radius: 10px; font-family: 'Rajdhani', sans-serif;
+            font-weight: 700; font-size: 1.1rem; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 0.05em;
+            margin-top: 10px;
         }
 
-        /* Toggle Switch */
-        .switch { position: relative; display: inline-block; width: 54px; height: 30px; }
+        /* Toggle Switch Light */
+        .switch { position: relative; display: inline-block; width: 48px; height: 26px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider-switch {
             position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #334155; transition: .3s; border-radius: 30px;
+            background-color: var(--border-color); transition: .3s; border-radius: 30px;
         }
         .slider-switch:before {
-            position: absolute; content: ""; height: 22px; width: 22px;
+            position: absolute; content: ""; height: 18px; width: 18px;
             left: 4px; bottom: 4px; background-color: white; transition: .3s; border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
-        input:checked + .slider-switch { background-color: var(--rpm-green); box-shadow: 0 0 15px rgba(0,255,102,0.4); }
-        input:checked + .slider-switch:before { transform: translateX(24px); }
+        input:checked + .slider-switch { background-color: var(--text-main); }
+        input:checked + .slider-switch:before { transform: translateX(22px); }
 
-        /* Manual Control */
+        /* Manual Control Light */
         .manual-control-bar {
-            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-            width: 80%; max-width: 600px; background: rgba(15,23,42,0.8);
-            backdrop-filter: blur(10px); padding: 15px 25px; border-radius: 20px;
-            display: flex; align-items: center; gap: 20px; z-index: 30;
-            border: 1px solid rgba(255,255,255,0.1);
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            width: 80%; max-width: 500px; background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(10px); padding: 12px 20px; border-radius: 16px;
+            display: flex; align-items: center; gap: 15px; z-index: 30;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
         }
         .manual-control-bar.hidden { display: none; }
-        #manualSliderVal { font-family: 'Teko', sans-serif; font-size: 2rem; width: 50px; text-align: right; }
+        #manualSliderVal { font-family: 'Teko', sans-serif; font-size: 1.5rem; width: 40px; text-align: right; color: var(--text-main); }
 
     </style>
 </head>
@@ -299,7 +303,7 @@
         <div class="top-bar">
             <div class="rpm-display-text" id="rpmTextDisplay">0 <span>RPM</span></div>
             <button class="settings-btn" id="openSettings">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="3"></circle>
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2.2 2.2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
@@ -328,7 +332,7 @@
 
     <!-- Manual Simulator -->
     <div class="manual-control-bar" id="manualBar">
-        <span style="font-family: 'Teko', sans-serif; font-size: 1.5rem; letter-spacing: 0.1em;">SIM</span>
+        <span style="font-family: 'Teko', sans-serif; font-size: 1.2rem; letter-spacing: 0.1em; color: var(--text-muted);">SIM</span>
         <input type="range" id="manualSpeedSlider" min="0" max="200" value="0" style="flex:1;">
         <span id="manualSliderVal">0</span>
     </div>
@@ -337,13 +341,13 @@
     <div class="modal-overlay" id="settingsModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>SYSTEM SETTINGS</h3>
+                <h3>EINSTELLUNGEN</h3>
                 <button class="close-btn" id="closeSettings">✕</button>
             </div>
 
             <div class="setting-group">
                 <div class="setting-row">
-                    <span>GPS Telemetry</span>
+                    <span>GPS Telemetrie</span>
                     <label class="switch">
                         <input type="checkbox" id="gpsToggle">
                         <span class="slider-switch"></span>
@@ -352,13 +356,13 @@
             </div>
 
             <div class="setting-group">
-                <label>Wheel Size (Inches)</label>
+                <label>Radgröße (Zoll)</label>
                 <div style="display: flex; gap: 10px;">
                     <select id="tirePreset" style="flex: 2;">
                         <option value="10">10" (Scooter)</option>
-                        <option value="19">19" (MX Rear)</option>
-                        <option value="21">21" (MX Front)</option>
-                        <option value="28" selected>28" (Street)</option>
+                        <option value="19">19" (MX Hinten)</option>
+                        <option value="21">21" (MX Vorne)</option>
+                        <option value="28" selected>28" (Straße)</option>
                         <option value="custom">Custom</option>
                     </select>
                     <input type="number" id="customTireSize" value="28" min="4" max="50" style="flex: 1;" disabled>
@@ -367,16 +371,15 @@
 
             <div class="setting-group">
                 <div class="setting-row">
-                    <label>Redline Limit</label>
-                    <span id="redlineValText" style="font-family:'Teko', sans-serif; font-size: 1.8rem;">10000</span>
+                    <label>Redline Limit (RPM)</label>
+                    <span id="redlineValText" style="font-family:'Teko', sans-serif; font-size: 1.5rem; color: var(--text-main);">10000</span>
                 </div>
-                <!-- Requested Range: 10 to 10000 -->
                 <input type="range" id="redlineSlider" min="10" max="10000" step="10" value="10000">
             </div>
 
             <div class="setting-group">
                 <div class="setting-row">
-                    <span>HUD Mirror View</span>
+                    <span>HUD Spiegelmodus</span>
                     <label class="switch">
                         <input type="checkbox" id="hudToggle">
                         <span class="slider-switch"></span>
@@ -384,7 +387,7 @@
                 </div>
             </div>
 
-            <button class="btn-primary" id="saveAndClose">CONFIRM</button>
+            <button class="btn-primary" id="saveAndClose">Bestätigen</button>
         </div>
     </div>
 
@@ -421,7 +424,7 @@
         const gpsStatusDot = document.getElementById('gpsStatusDot');
         const gpsStatusText = document.getElementById('gpsStatusText');
 
-        // High DPI Canvas Setup for Full Screen
+        // Canvas Setup (High DPI)
         function resizeCanvas() {
             const dpr = window.devicePixelRatio || 1;
             const rect = canvas.getBoundingClientRect();
@@ -437,7 +440,7 @@
             return (speedKmh * 1000 / 60) / (Math.PI * tireInches * 0.0254);
         }
 
-        // Draw Advanced Segmented Neon Arc
+        // Segmented Arc for Light Mode
         function drawGauge() {
             const rect = canvas.getBoundingClientRect();
             const width = rect.width;
@@ -445,33 +448,32 @@
             ctx.clearRect(0, 0, width, height);
 
             const centerX = width / 2;
-            const centerY = height * 0.65; // Position arc to frame the text
-            const radius = Math.min(width * 0.45, height * 0.55);
+            const centerY = height * 0.65; 
+            // Radius etwas kleiner für "normale" Dimensionen
+            const radius = Math.min(width * 0.38, height * 0.48);
             
             const startAngle = Math.PI * 0.8;
             const endAngle = Math.PI * 2.2;
             const totalAngleSpan = endAngle - startAngle;
 
-            // Segment configuration
-            const totalSegments = 60; // Cool digital LED look
-            const segmentGap = 0.025; 
+            const totalSegments = 50; 
+            const segmentGap = 0.03; 
             const segmentSpan = (totalAngleSpan / totalSegments) - segmentGap;
 
-            // 1. Draw Inactive Background Track (Dark transparent dashes)
+            // 1. Inaktiver Hintergrund (Dunkelgrau für hellen Modus)
             for (let i = 0; i < totalSegments; i++) {
                 const a1 = startAngle + i * (segmentSpan + segmentGap);
                 const a2 = a1 + segmentSpan;
                 
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, radius, a1, a2);
-                ctx.lineWidth = 12;
+                ctx.lineWidth = 10; /* Etwas schmaler */
                 ctx.lineCap = 'butt';
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
-                ctx.shadowBlur = 0;
+                ctx.strokeStyle = 'rgba(15, 23, 42, 0.08)'; /* Dezent auf Weiß */
                 ctx.stroke();
             }
 
-            // 2. Draw Active Glow Segments
+            // 2. Aktive Segmente (Kräftige Farben, kein extremer Glow)
             const rpmRatio = Math.min(Math.max(displayRpm / maxRpmLimit, 0), 1);
             if (rpmRatio > 0) {
                 const activeSegments = Math.floor(rpmRatio * totalSegments);
@@ -483,34 +485,25 @@
 
                     ctx.beginPath();
                     ctx.arc(centerX, centerY, radius, a1, a2);
-                    ctx.lineWidth = 14; 
-                    ctx.lineCap = 'round'; // rounded glowing LEDs
+                    ctx.lineWidth = 12; 
+                    ctx.lineCap = 'round'; 
                     
-                    // Color Logic
                     let segmentColor;
                     if (pointRatio < 0.65) {
-                        segmentColor = '#00ff66'; // Stark Green
+                        segmentColor = '#10b981'; // Green
                     } else if (pointRatio < 0.85) {
-                        segmentColor = '#ffcc00'; // Warning Yellow
+                        segmentColor = '#f59e0b'; // Yellow
                     } else {
-                        segmentColor = '#ff0033'; // Redline
+                        segmentColor = '#ef4444'; // Red
                     }
 
                     ctx.strokeStyle = segmentColor;
-                    
-                    // Add Neon Glow
-                    ctx.shadowColor = segmentColor;
-                    ctx.shadowBlur = 15; // Intense glow
-
                     ctx.stroke();
                 }
             }
-            
-            // Reset shadow for other drawings
-            ctx.shadowBlur = 0;
         }
 
-        // 60FPS Render Loop
+        // Render Loop
         function update() {
             displaySpeed += (currentSpeed - displaySpeed) * 0.15;
             displayRpm += (currentRpm - displayRpm) * 0.15;
@@ -523,8 +516,7 @@
         }
         requestAnimationFrame(update);
 
-        // --- Event Listeners & Logic ---
-
+        // --- Event Listeners ---
         manualSpeedSlider.addEventListener('input', (e) => {
             if (!gpsActive) {
                 currentSpeed = parseFloat(e.target.value);
@@ -559,7 +551,6 @@
             currentRpm = calculateRPM(currentSpeed, tireSizeInches);
         });
 
-        // Dynamic Redline Limit (10 to 10000)
         redlineSlider.addEventListener('input', (e) => {
             maxRpmLimit = parseInt(e.target.value);
             redlineValText.textContent = maxRpmLimit;
@@ -578,21 +569,19 @@
 
         function startGpsTracking() {
             if (!navigator.geolocation) {
-                alert('GPS Not Supported.');
+                alert('GPS wird nicht unterstützt.');
                 gpsToggle.checked = false;
                 gpsActive = false;
                 return;
             }
 
-            gpsStatusText.textContent = 'GPS SEARCHING';
+            gpsStatusText.textContent = 'GPS SUCHE';
             manualBar.classList.add('hidden');
-
-            const options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
 
             gpsWatchId = navigator.geolocation.watchPosition(
                 (position) => {
                     gpsStatusDot.classList.add('active');
-                    gpsStatusText.textContent = 'GPS LINKED';
+                    gpsStatusText.textContent = 'GPS VERBUNDEN';
                     
                     const speedMs = position.coords.speed;
                     currentSpeed = (speedMs !== null && speedMs >= 0) ? (speedMs * 3.6) : 0;
@@ -600,9 +589,9 @@
                 },
                 (error) => {
                     gpsStatusDot.classList.remove('active');
-                    gpsStatusText.textContent = 'NO SIGNAL';
+                    gpsStatusText.textContent = 'KEIN SIGNAL';
                 },
-                options
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         }
 
