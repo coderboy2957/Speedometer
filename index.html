@@ -3,42 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Stark VARG Style Speedometer</title>
+    <title>Stark VARG Full-Screen Dashboard</title>
+    <!-- Stark VARG Style Font (Teko & Rajdhani) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Teko:wght@500;600;700&display=swap" rel="stylesheet">
+    
     <style>
         :root {
-            --bg-color: #f0f3f8;
-            --panel-bg: rgba(255, 255, 255, 0.85);
-            --panel-border: rgba(255, 255, 255, 1);
-            --text-main: #0f172a;
+            --bg-dark: #090b10;
+            --text-main: #ffffff;
             --text-muted: #64748b;
-            --shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.1), 0 0 15px rgba(0, 0, 0, 0.03);
-            --accent: #3b82f6;
-            
-            /* RPM Colors */
-            --rpm-green: #10b981;
-            --rpm-yellow: #f59e0b;
-            --rpm-red: #ef4444;
+            --rpm-green: #00ff66;
+            --rpm-yellow: #ffcc00;
+            --rpm-red: #ff0033;
+            --panel-bg: rgba(15, 23, 42, 0.85);
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             -webkit-user-select: none;
             user-select: none;
         }
 
         body {
-            background-color: var(--bg-color);
+            background-color: var(--bg-dark);
             color: var(--text-main);
-            min-height: 100vh;
-            /* Fix for iOS Safari */
-            min-height: -webkit-fill-available; 
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            width: 100vw;
+            height: 100vh;
             overflow: hidden;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            flex-direction: column;
             position: relative;
         }
 
@@ -46,173 +44,157 @@
             transform: scaleX(-1);
         }
 
+        /* Full Screen Layout */
         .dashboard-container {
-            width: 95vw;
-            max-width: 800px;
-            height: 90vh;
-            max-height: 450px;
-            background: var(--panel-bg);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            border: 1px solid var(--panel-border);
-            border-radius: 36px;
-            box-shadow: var(--shadow);
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 24px 32px;
             position: relative;
             z-index: 10;
+            padding: 4vh 5vw;
         }
 
         /* Top Bar */
         .top-bar {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            width: 100%;
+            align-items: flex-start;
             z-index: 20;
         }
 
-        .rpm-title {
-            font-size: 1.2rem;
-            font-weight: 600;
+        .rpm-display-text {
+            font-family: 'Teko', sans-serif;
+            font-size: 2.5rem;
+            line-height: 1;
+            letter-spacing: 0.05em;
+            color: var(--text-main);
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+
+        .rpm-display-text span {
+            font-size: 1.5rem;
             color: var(--text-muted);
-            letter-spacing: -0.01em;
         }
 
         .settings-btn {
             background: transparent;
             border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
             color: var(--text-muted);
-            transition: all 0.2s ease;
+            cursor: pointer;
+            transition: color 0.2s, transform 0.2s;
         }
 
-        .settings-btn:hover {
-            background: rgba(0, 0, 0, 0.05);
+        .settings-btn:active {
+            transform: scale(0.9);
             color: var(--text-main);
         }
 
-        /* Center Display (Canvas & Speed) */
+        /* Center Display */
         .center-display {
-            flex: 1;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            position: relative;
-            width: 100%;
+            pointer-events: none;
         }
 
         .gauge-canvas-wrapper {
             position: absolute;
-            width: 100%;
-            height: 100%;
             top: 0;
             left: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            pointer-events: none;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
         }
 
         canvas {
-            width: 100% !important;
-            height: 100% !important;
+            width: 100%;
+            height: 100%;
         }
 
         .speed-value-container {
+            position: relative;
+            z-index: 2;
             display: flex;
             flex-direction: column;
             align-items: center;
-            z-index: 2;
-            margin-top: 20px; /* Offset to center inside the arc */
+            margin-top: 10vh; /* Offset to sit nicely in the arc */
         }
 
         .speed-number {
-            font-size: 7rem;
-            font-weight: 800;
-            line-height: 0.9;
-            letter-spacing: -0.04em;
+            font-family: 'Teko', sans-serif;
+            font-size: 30vmin; /* Responsive massive font */
+            font-weight: 700;
+            line-height: 0.75;
             color: var(--text-main);
-            font-variant-numeric: tabular-nums;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+            letter-spacing: -0.02em;
         }
 
         .speed-unit {
-            font-size: 1.1rem;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 2.5vmin;
             font-weight: 700;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.2em;
-            margin-top: 8px;
+            letter-spacing: 0.4em;
+            margin-top: 15px;
         }
 
         /* Bottom Status Bar */
         .bottom-bar {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding-top: 10px;
+            align-items: flex-end;
             z-index: 20;
         }
 
         .status-pill {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
+            gap: 10px;
+            font-size: 1.1rem;
+            font-weight: 700;
             color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
         }
 
         .status-dot {
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
-            background: #cbd5e1;
-            transition: background 0.3s, box-shadow 0.3s;
+            background: #334155;
+            box-shadow: 0 0 0 rgba(0,0,0,0);
+            transition: all 0.3s;
         }
 
         .status-dot.active {
             background: var(--rpm-green);
-            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 0 15px var(--rpm-green);
         }
 
-        .mode-indicator {
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            background: rgba(0, 0, 0, 0.05);
-            padding: 6px 12px;
-            border-radius: 20px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        /* Settings Modal */
+        /* Settings Modal (Glassmorphism Dark) */
         .modal-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(15, 23, 42, 0.15);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 100;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.3s;
         }
 
         .modal-overlay.open {
@@ -221,189 +203,110 @@
         }
 
         .modal-content {
-            background: #ffffff;
-            width: 90vw;
-            max-width: 400px;
-            border-radius: 32px;
+            background: var(--panel-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            width: 90vw; max-width: 450px;
+            border-radius: 24px;
             padding: 30px;
-            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-            transform: translateY(20px) scale(0.95);
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex; flex-direction: column; gap: 25px;
+            transform: scale(0.95);
+            transition: transform 0.3s;
         }
 
-        .modal-overlay.open .modal-content {
-            transform: translateY(0) scale(1);
-        }
+        .modal-overlay.open .modal-content { transform: scale(1); }
 
         .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
         }
 
         .modal-header h3 {
-            font-size: 1.3rem;
-            font-weight: 700;
+            font-family: 'Teko', sans-serif;
+            font-size: 2.2rem;
+            letter-spacing: 0.05em;
             color: var(--text-main);
         }
 
         .close-btn {
-            background: #f1f5f9;
-            border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-muted);
-            transition: background 0.2s;
-        }
-        .close-btn:hover { background: #e2e8f0; }
-
-        .setting-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            background: rgba(255,255,255,0.1);
+            border: none; color: #fff;
+            width: 36px; height: 36px; border-radius: 50%;
+            font-size: 1.2rem; cursor: pointer;
         }
 
-        .setting-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
+        .setting-group { display: flex; flex-direction: column; gap: 10px; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; }
         .setting-row span, .setting-group label {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--text-main);
+            font-size: 1.1rem; font-weight: 600; color: #cbd5e1;
         }
 
-        .setting-group input[type="range"] {
-            width: 100%;
-            accent-color: var(--text-main);
-            height: 6px;
-            background: #e2e8f0;
-            border-radius: 3px;
-            outline: none;
-            margin-top: 8px;
+        input[type="range"] {
+            width: 100%; height: 6px; background: #334155;
+            border-radius: 3px; outline: none; -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 20px; height: 20px;
+            background: #fff; border-radius: 50%; cursor: pointer;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
         }
 
         select, input[type="number"] {
-            background: #f8fafc;
-            border: 1px solid #cbd5e1;
-            padding: 10px 14px;
-            border-radius: 12px;
-            font-size: 1rem;
-            color: var(--text-main);
-            outline: none;
-            font-weight: 600;
-            transition: border 0.2s;
+            background: rgba(0,0,0,0.5); border: 1px solid #475569;
+            color: #fff; padding: 12px; border-radius: 12px;
+            font-size: 1.1rem; font-family: 'Rajdhani', sans-serif;
+            font-weight: 600; outline: none;
         }
-        select:focus, input[type="number"]:focus { border-color: var(--text-main); }
 
         .btn-primary {
-            background: var(--text-main);
-            color: #ffffff;
-            border: none;
-            padding: 14px;
-            border-radius: 16px;
-            font-weight: 700;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: transform 0.1s, opacity 0.2s;
+            background: #fff; color: #000; border: none;
+            padding: 16px; border-radius: 12px; font-family: 'Rajdhani', sans-serif;
+            font-weight: 700; font-size: 1.2rem; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 0.1em;
         }
-        .btn-primary:active { transform: scale(0.98); opacity: 0.9; }
 
-        /* Custom Toggle Switch */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 28px;
-        }
+        /* Toggle Switch */
+        .switch { position: relative; display: inline-block; width: 54px; height: 30px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider-switch {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #cbd5e1;
-            transition: .3s;
-            border-radius: 28px;
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #334155; transition: .3s; border-radius: 30px;
         }
         .slider-switch:before {
-            position: absolute;
-            content: "";
-            height: 22px;
-            width: 22px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .3s cubic-bezier(0.16, 1, 0.3, 1);
-            border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: absolute; content: ""; height: 22px; width: 22px;
+            left: 4px; bottom: 4px; background-color: white; transition: .3s; border-radius: 50%;
         }
-        input:checked + .slider-switch { background-color: var(--rpm-green); }
-        input:checked + .slider-switch:before { transform: translateX(22px); }
+        input:checked + .slider-switch { background-color: var(--rpm-green); box-shadow: 0 0 15px rgba(0,255,102,0.4); }
+        input:checked + .slider-switch:before { transform: translateX(24px); }
 
-        /* Manual Slider Control Panel */
+        /* Manual Control */
         .manual-control-bar {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 85%;
-            max-width: 500px;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            padding: 12px 24px;
-            border-radius: 24px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            border: 1px solid rgba(255,255,255,1);
-            z-index: 20;
-            transition: opacity 0.3s, transform 0.3s;
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+            width: 80%; max-width: 600px; background: rgba(15,23,42,0.8);
+            backdrop-filter: blur(10px); padding: 15px 25px; border-radius: 20px;
+            display: flex; align-items: center; gap: 20px; z-index: 30;
+            border: 1px solid rgba(255,255,255,0.1);
         }
+        .manual-control-bar.hidden { display: none; }
+        #manualSliderVal { font-family: 'Teko', sans-serif; font-size: 2rem; width: 50px; text-align: right; }
 
-        .manual-control-bar.hidden {
-            opacity: 0;
-            pointer-events: none;
-            transform: translate(-50%, 20px);
-        }
-        
-        #manualSpeedSlider {
-            flex: 1;
-            accent-color: var(--text-main);
-            height: 6px;
-            background: #e2e8f0;
-            border-radius: 3px;
-            outline: none;
-        }
     </style>
 </head>
 <body>
 
+    <!-- Full Screen Container -->
     <div class="dashboard-container">
-        <!-- Top bar -->
+        
+        <!-- Top Info -->
         <div class="top-bar">
-            <div class="rpm-title" id="rpmTextDisplay">Rpm 0.0k</div>
-            <button class="settings-btn" id="openSettings" title="Einstellungen">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div class="rpm-display-text" id="rpmTextDisplay">0 <span>RPM</span></div>
+            <button class="settings-btn" id="openSettings">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="3"></circle>
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2.2 2.2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
             </button>
         </div>
 
-        <!-- Center Tacho & Gauge -->
+        <!-- Center Tacho & Gauge Layer -->
         <div class="center-display">
             <div class="gauge-canvas-wrapper">
                 <canvas id="gaugeCanvas"></canvas>
@@ -418,30 +321,29 @@
         <div class="bottom-bar">
             <div class="status-pill">
                 <div class="status-dot" id="gpsStatusDot"></div>
-                <span id="gpsStatusText">GPS Inaktiv</span>
+                <span id="gpsStatusText">GPS OFF</span>
             </div>
-            <div class="mode-indicator" id="modeIndicatorLabel">Manuell</div>
         </div>
     </div>
 
-    <!-- Manual Control Slider Bar -->
+    <!-- Manual Simulator -->
     <div class="manual-control-bar" id="manualBar">
-        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.05em;">TEST</span>
-        <input type="range" id="manualSpeedSlider" min="0" max="200" value="0">
-        <span id="manualSliderVal" style="font-size: 1rem; font-weight: 700; width: 30px; text-align: right; font-variant-numeric: tabular-nums;">0</span>
+        <span style="font-family: 'Teko', sans-serif; font-size: 1.5rem; letter-spacing: 0.1em;">SIM</span>
+        <input type="range" id="manualSpeedSlider" min="0" max="200" value="0" style="flex:1;">
+        <span id="manualSliderVal">0</span>
     </div>
 
-    <!-- Settings Modal -->
+    <!-- Settings Overlay -->
     <div class="modal-overlay" id="settingsModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Einstellungen</h3>
+                <h3>SYSTEM SETTINGS</h3>
                 <button class="close-btn" id="closeSettings">✕</button>
             </div>
 
             <div class="setting-group">
                 <div class="setting-row">
-                    <span>Live GPS-Tracking</span>
+                    <span>GPS Telemetry</span>
                     <label class="switch">
                         <input type="checkbox" id="gpsToggle">
                         <span class="slider-switch"></span>
@@ -450,13 +352,14 @@
             </div>
 
             <div class="setting-group">
-                <label>Reifengröße (Zoll)</label>
-                <div style="display: flex; gap: 12px;">
+                <label>Wheel Size (Inches)</label>
+                <div style="display: flex; gap: 10px;">
                     <select id="tirePreset" style="flex: 2;">
-                        <option value="10">10" (E-Scooter)</option>
-                        <option value="26">26" (MTB)</option>
-                        <option value="28" selected>28" (Trekking/Road)</option>
-                        <option value="custom">Eigene...</option>
+                        <option value="10">10" (Scooter)</option>
+                        <option value="19">19" (MX Rear)</option>
+                        <option value="21">21" (MX Front)</option>
+                        <option value="28" selected>28" (Street)</option>
+                        <option value="custom">Custom</option>
                     </select>
                     <input type="number" id="customTireSize" value="28" min="4" max="50" style="flex: 1;" disabled>
                 </div>
@@ -464,15 +367,16 @@
 
             <div class="setting-group">
                 <div class="setting-row">
-                    <label>RPM Redline Limit</label>
-                    <span id="redlineValText" style="font-size: 1rem; font-weight: 700;">8000</span>
+                    <label>Redline Limit</label>
+                    <span id="redlineValText" style="font-family:'Teko', sans-serif; font-size: 1.8rem;">10000</span>
                 </div>
-                <input type="range" id="redlineSlider" min="2000" max="15000" step="500" value="8000">
+                <!-- Requested Range: 10 to 10000 -->
+                <input type="range" id="redlineSlider" min="10" max="10000" step="10" value="10000">
             </div>
 
             <div class="setting-group">
                 <div class="setting-row">
-                    <span>HUD Spiegel-Modus</span>
+                    <span>HUD Mirror View</span>
                     <label class="switch">
                         <input type="checkbox" id="hudToggle">
                         <span class="slider-switch"></span>
@@ -480,22 +384,22 @@
                 </div>
             </div>
 
-            <button class="btn-primary" id="saveAndClose">Fertig</button>
+            <button class="btn-primary" id="saveAndClose">CONFIRM</button>
         </div>
     </div>
 
     <script>
-        // State
+        // Core State
         let currentSpeed = 0;
         let displaySpeed = 0;
         let currentRpm = 0;
         let displayRpm = 0;
-        let maxRpmLimit = 8000;
+        let maxRpmLimit = 10000;
         let tireSizeInches = 28;
         let gpsActive = false;
         let gpsWatchId = null;
 
-        // DOM Elements
+        // Elements
         const speedDisplay = document.getElementById('speedDisplay');
         const rpmTextDisplay = document.getElementById('rpmTextDisplay');
         const canvas = document.getElementById('gaugeCanvas');
@@ -516,9 +420,8 @@
         const redlineValText = document.getElementById('redlineValText');
         const gpsStatusDot = document.getElementById('gpsStatusDot');
         const gpsStatusText = document.getElementById('gpsStatusText');
-        const modeIndicatorLabel = document.getElementById('modeIndicatorLabel');
 
-        // Setup Canvas Resolution
+        // High DPI Canvas Setup for Full Screen
         function resizeCanvas() {
             const dpr = window.devicePixelRatio || 1;
             const rect = canvas.getBoundingClientRect();
@@ -529,97 +432,99 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // Calculate RPM based on speed and tire size
         function calculateRPM(speedKmh, tireInches) {
             if (speedKmh <= 0 || tireInches <= 0) return 0;
             return (speedKmh * 1000 / 60) / (Math.PI * tireInches * 0.0254);
         }
 
-        // Draw the smooth, growing RPM Arc
+        // Draw Advanced Segmented Neon Arc
         function drawGauge() {
             const rect = canvas.getBoundingClientRect();
             const width = rect.width;
             const height = rect.height;
             ctx.clearRect(0, 0, width, height);
 
-            // Positioning
             const centerX = width / 2;
-            const centerY = height * 0.7; // Arc center offset
-            const radius = Math.min(width * 0.4, height * 0.6);
+            const centerY = height * 0.65; // Position arc to frame the text
+            const radius = Math.min(width * 0.45, height * 0.55);
             
-            const startAngle = Math.PI * 0.85; // Left start
-            const endAngle = Math.PI * 2.15;   // Right end
+            const startAngle = Math.PI * 0.8;
+            const endAngle = Math.PI * 2.2;
             const totalAngleSpan = endAngle - startAngle;
 
-            // 1. Draw Inactive Background Track (Light Gray)
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-            ctx.lineWidth = 14;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = 'rgba(15, 23, 42, 0.04)'; // Extremely faint track
-            ctx.stroke();
+            // Segment configuration
+            const totalSegments = 60; // Cool digital LED look
+            const segmentGap = 0.025; 
+            const segmentSpan = (totalAngleSpan / totalSegments) - segmentGap;
 
-            // 2. Draw Active Growing Arc (Only up to current RPM)
+            // 1. Draw Inactive Background Track (Dark transparent dashes)
+            for (let i = 0; i < totalSegments; i++) {
+                const a1 = startAngle + i * (segmentSpan + segmentGap);
+                const a2 = a1 + segmentSpan;
+                
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, a1, a2);
+                ctx.lineWidth = 12;
+                ctx.lineCap = 'butt';
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+                ctx.shadowBlur = 0;
+                ctx.stroke();
+            }
+
+            // 2. Draw Active Glow Segments
             const rpmRatio = Math.min(Math.max(displayRpm / maxRpmLimit, 0), 1);
             if (rpmRatio > 0) {
-                const activeAngleSpan = totalAngleSpan * rpmRatio;
-                const segCount = 80; // High resolution for smooth gradient look
-                const angleStep = activeAngleSpan / segCount;
+                const activeSegments = Math.floor(rpmRatio * totalSegments);
                 
-                for (let i = 0; i < segCount; i++) {
-                    const a1 = startAngle + i * angleStep;
-                    const a2 = a1 + angleStep + 0.015; // overlap to prevent rendering gaps
-                    const pointRatio = (i / segCount) * rpmRatio; // How far along the total scale is this segment?
+                for (let i = 0; i < activeSegments; i++) {
+                    const a1 = startAngle + i * (segmentSpan + segmentGap);
+                    const a2 = a1 + segmentSpan;
+                    const pointRatio = i / totalSegments;
 
                     ctx.beginPath();
                     ctx.arc(centerX, centerY, radius, a1, a2);
-                    ctx.lineWidth = 14;
+                    ctx.lineWidth = 14; 
+                    ctx.lineCap = 'round'; // rounded glowing LEDs
                     
-                    // First and last segments need rounded caps to match the background track nicely
-                    if (i === 0) {
-                        ctx.lineCap = 'round';
-                        ctx.arc(centerX, centerY, radius, a1, a2);
-                    } else if (i === segCount - 1) {
-                        ctx.lineCap = 'round';
-                        ctx.arc(centerX, centerY, radius, a1, a2);
+                    // Color Logic
+                    let segmentColor;
+                    if (pointRatio < 0.65) {
+                        segmentColor = '#00ff66'; // Stark Green
+                    } else if (pointRatio < 0.85) {
+                        segmentColor = '#ffcc00'; // Warning Yellow
                     } else {
-                        ctx.lineCap = 'butt';
+                        segmentColor = '#ff0033'; // Redline
                     }
 
-                    // Dynamic color assignment based on position
-                    if (pointRatio < 0.60) {
-                        ctx.strokeStyle = '#10b981'; // Green
-                    } else if (pointRatio < 0.85) {
-                        ctx.strokeStyle = '#f59e0b'; // Yellow
-                    } else {
-                        ctx.strokeStyle = '#ef4444'; // Red
-                    }
+                    ctx.strokeStyle = segmentColor;
                     
+                    // Add Neon Glow
+                    ctx.shadowColor = segmentColor;
+                    ctx.shadowBlur = 15; // Intense glow
+
                     ctx.stroke();
                 }
             }
+            
+            // Reset shadow for other drawings
+            ctx.shadowBlur = 0;
         }
 
-        // Animation Engine (60 FPS Lerp)
+        // 60FPS Render Loop
         function update() {
-            // Smooth interpolation
-            displaySpeed += (currentSpeed - displaySpeed) * 0.12;
-            displayRpm += (currentRpm - displayRpm) * 0.12;
+            displaySpeed += (currentSpeed - displaySpeed) * 0.15;
+            displayRpm += (currentRpm - displayRpm) * 0.15;
 
-            // Update UI Texts
             speedDisplay.textContent = Math.round(displaySpeed);
-            
-            const rpmK = (displayRpm / 1000).toFixed(1);
-            rpmTextDisplay.textContent = `Rpm ${rpmK}k`;
+            rpmTextDisplay.innerHTML = `${Math.round(displayRpm)} <span>RPM</span>`;
 
             drawGauge();
             requestAnimationFrame(update);
         }
         requestAnimationFrame(update);
 
-        // --- Controls & Logic ---
+        // --- Event Listeners & Logic ---
 
-        // Manual Speed Slider
         manualSpeedSlider.addEventListener('input', (e) => {
             if (!gpsActive) {
                 currentSpeed = parseFloat(e.target.value);
@@ -628,7 +533,6 @@
             }
         });
 
-        // Modal Open/Close
         const toggleModal = (show) => {
             if(show) settingsModal.classList.add('open');
             else settingsModal.classList.remove('open');
@@ -637,7 +541,6 @@
         closeSettingsBtn.addEventListener('click', () => toggleModal(false));
         saveAndCloseBtn.addEventListener('click', () => toggleModal(false));
 
-        // Tire Size Logic
         tirePreset.addEventListener('change', (e) => {
             if (e.target.value === 'custom') {
                 customTireSize.disabled = false;
@@ -656,19 +559,17 @@
             currentRpm = calculateRPM(currentSpeed, tireSizeInches);
         });
 
-        // Redline Logic (Changes scaling, not the physical arc path)
+        // Dynamic Redline Limit (10 to 10000)
         redlineSlider.addEventListener('input', (e) => {
             maxRpmLimit = parseInt(e.target.value);
             redlineValText.textContent = maxRpmLimit;
         });
 
-        // HUD Mirror Mode
         hudToggle.addEventListener('change', (e) => {
             if (e.target.checked) document.body.classList.add('hud-mode');
             else document.body.classList.remove('hud-mode');
         });
 
-        // GPS Logic
         gpsToggle.addEventListener('change', (e) => {
             gpsActive = e.target.checked;
             if (gpsActive) startGpsTracking();
@@ -677,14 +578,13 @@
 
         function startGpsTracking() {
             if (!navigator.geolocation) {
-                alert('Dein Browser unterstützt kein GPS.');
+                alert('GPS Not Supported.');
                 gpsToggle.checked = false;
                 gpsActive = false;
                 return;
             }
 
-            gpsStatusText.textContent = 'GPS sucht...';
-            modeIndicatorLabel.textContent = 'GPS Aktiv';
+            gpsStatusText.textContent = 'GPS SEARCHING';
             manualBar.classList.add('hidden');
 
             const options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
@@ -692,16 +592,15 @@
             gpsWatchId = navigator.geolocation.watchPosition(
                 (position) => {
                     gpsStatusDot.classList.add('active');
-                    gpsStatusText.textContent = 'GPS Verbunden';
+                    gpsStatusText.textContent = 'GPS LINKED';
                     
                     const speedMs = position.coords.speed;
-                    // speedMs is null on some devices if not moving, convert m/s to km/h
                     currentSpeed = (speedMs !== null && speedMs >= 0) ? (speedMs * 3.6) : 0;
                     currentRpm = calculateRPM(currentSpeed, tireSizeInches);
                 },
                 (error) => {
                     gpsStatusDot.classList.remove('active');
-                    gpsStatusText.textContent = 'Kein Signal';
+                    gpsStatusText.textContent = 'NO SIGNAL';
                 },
                 options
             );
@@ -713,13 +612,9 @@
                 gpsWatchId = null;
             }
             gpsStatusDot.classList.remove('active');
-            gpsStatusText.textContent = 'GPS Inaktiv';
-            modeIndicatorLabel.textContent = 'Manuell';
+            gpsStatusText.textContent = 'GPS OFF';
             manualBar.classList.remove('hidden');
         }
-        
-        // Initial setup trigger to populate defaults
-        redlineValText.textContent = maxRpmLimit;
     </script>
 </body>
 </html>
