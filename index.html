@@ -3,607 +3,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Stark VARG Dashboard - Light Edition</title>
-    <!-- Stark VARG Style Font (Teko & Rajdhani) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Teko:wght@500;600;700&display=swap" rel="stylesheet">
-    
+    <title>Stark Varg Tacho</title>
+    <!-- Tailwind CSS für modernes, responsives Design -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root {
-            --bg-main: #f1f5f9;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            /* Angepasste Farben für besseren Kontrast auf hellem Grund */
-            --rpm-green: #10b981; 
-            --rpm-yellow: #f59e0b;
-            --rpm-red: #ef4444;
-            --panel-bg: rgba(255, 255, 255, 0.95);
-            --border-color: #cbd5e1;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-
+        /* Stark Varg ähnlicher, sportlicher Font */
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,900;1,900&display=swap');
+        
         body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-            font-family: 'Rajdhani', sans-serif;
-            display: flex;
-            flex-direction: column;
-            position: relative;
+            font-family: 'Montserrat', sans-serif;
+            background-color: #f3f4f6; /* Helle UI */
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        body.hud-mode {
-            transform: scaleX(-1);
+        .rpm-path {
+            /* Flüssige Animation der farbigen Linie ohne Stufen */
+            transition: stroke-dashoffset 0.15s linear;
         }
 
-        /* Full Screen Layout */
-        .dashboard-container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            z-index: 10;
-            padding: 4vh 5vw;
+        /* Glassmorphism-Effekt für das Einstellungsfenster */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
         }
-
-        /* Top Bar */
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            z-index: 20;
-        }
-
-        .rpm-display-text {
-            font-family: 'Teko', sans-serif;
-            font-size: 1.8rem; /* Normale Größe */
-            line-height: 1;
-            letter-spacing: 0.05em;
-            color: var(--text-main);
-        }
-
-        .rpm-display-text span {
-            font-size: 1.1rem;
-            color: var(--text-muted);
-        }
-
-        .settings-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            transition: color 0.2s, transform 0.2s;
-        }
-
-        .settings-btn:active {
-            transform: scale(0.9);
-            color: var(--text-main);
-        }
-
-        /* Center Display */
-        .center-display {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            pointer-events: none;
-        }
-
-        .gauge-canvas-wrapper {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-
-        canvas {
-            width: 100%;
-            height: 100%;
-        }
-
-        .speed-value-container {
-            position: relative;
-            z-index: 2;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 5vh;
-        }
-
-        .speed-number {
-            font-family: 'Teko', sans-serif;
-            font-size: 15vmin; /* Deutlich kleiner und aufgeräumter */
-            font-weight: 700;
-            line-height: 0.8;
-            color: var(--text-main);
-            letter-spacing: -0.02em;
-        }
-
-        .speed-unit {
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 3vmin;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            margin-top: 8px;
-        }
-
-        /* Bottom Status Bar */
-        .bottom-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            z-index: 20;
-        }
-
-        .status-pill {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--border-color);
-            transition: all 0.3s;
-        }
-
-        .status-dot.active {
-            background: var(--rpm-green);
-            box-shadow: 0 0 8px var(--rpm-green);
-        }
-
-        /* Settings Modal (Light Glassmorphism) */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(15, 23, 42, 0.4);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-        }
-
-        .modal-overlay.open {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .modal-content {
-            background: var(--panel-bg);
-            border: 1px solid #ffffff;
-            width: 90vw; max-width: 420px;
-            border-radius: 20px;
-            padding: 25px;
-            display: flex; flex-direction: column; gap: 20px;
-            transform: scale(0.95);
-            transition: transform 0.3s;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-        }
-
-        .modal-overlay.open .modal-content { transform: scale(1); }
-
-        .modal-header {
-            display: flex; justify-content: space-between; align-items: center;
-        }
-
-        .modal-header h3 {
-            font-family: 'Teko', sans-serif;
-            font-size: 2rem;
-            letter-spacing: 0.05em;
-            color: var(--text-main);
-        }
-
-        .close-btn {
-            background: var(--bg-main);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            width: 32px; height: 32px; border-radius: 50%;
-            font-size: 1.1rem; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-        }
-
-        .setting-group { display: flex; flex-direction: column; gap: 8px; }
-        .setting-row { display: flex; justify-content: space-between; align-items: center; }
-        .setting-row span, .setting-group label {
-            font-size: 1rem; font-weight: 700; color: var(--text-main);
-        }
-
-        input[type="range"] {
-            width: 100%; height: 6px; background: var(--border-color);
-            border-radius: 3px; outline: none; -webkit-appearance: none;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 18px; height: 18px;
-            background: var(--text-main); border-radius: 50%; cursor: pointer;
-        }
-
-        select, input[type="number"] {
-            background: #ffffff; border: 1px solid var(--border-color);
-            color: var(--text-main); padding: 10px; border-radius: 10px;
-            font-size: 1rem; font-family: 'Rajdhani', sans-serif;
-            font-weight: 600; outline: none;
-        }
-
-        .btn-primary {
-            background: var(--text-main); color: #ffffff; border: none;
-            padding: 14px; border-radius: 10px; font-family: 'Rajdhani', sans-serif;
-            font-weight: 700; font-size: 1.1rem; cursor: pointer;
-            text-transform: uppercase; letter-spacing: 0.05em;
-            margin-top: 10px;
-        }
-
-        /* Toggle Switch Light */
-        .switch { position: relative; display: inline-block; width: 48px; height: 26px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider-switch {
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: var(--border-color); transition: .3s; border-radius: 30px;
-        }
-        .slider-switch:before {
-            position: absolute; content: ""; height: 18px; width: 18px;
-            left: 4px; bottom: 4px; background-color: white; transition: .3s; border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        input:checked + .slider-switch { background-color: var(--text-main); }
-        input:checked + .slider-switch:before { transform: translateX(22px); }
-
-        /* Manual Control Light */
-        .manual-control-bar {
-            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-            width: 80%; max-width: 500px; background: rgba(255,255,255,0.85);
-            backdrop-filter: blur(10px); padding: 12px 20px; border-radius: 16px;
-            display: flex; align-items: center; gap: 15px; z-index: 30;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-        }
-        .manual-control-bar.hidden { display: none; }
-        #manualSliderVal { font-family: 'Teko', sans-serif; font-size: 1.5rem; width: 40px; text-align: right; color: var(--text-main); }
-
     </style>
 </head>
-<body>
+<body class="flex items-center justify-center min-h-screen p-4 overflow-hidden">
 
-    <!-- Full Screen Container -->
-    <div class="dashboard-container">
+    <!-- HAUPTANSICHT (Tacho) -->
+    <div class="relative w-full max-w-3xl aspect-[16/9] sm:aspect-[2/1] bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col items-center justify-end p-8 border border-gray-100">
         
-        <!-- Top Info -->
-        <div class="top-bar">
-            <div class="rpm-display-text" id="rpmTextDisplay">0 <span>RPM</span></div>
-            <button class="settings-btn" id="openSettings">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2.2 2.2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                </svg>
+        <!-- Einstellungen Knopf (Oben Rechts) -->
+        <button id="btnOpenSettings" class="absolute top-6 right-6 p-2 text-gray-300 hover:text-gray-800 transition-colors z-20 cursor-pointer">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+            </svg>
+        </button>
+
+        <!-- SVG für die stufenlose RPM Anzeige (Farbiger Bogen) -->
+        <svg class="absolute top-0 left-0 w-full h-full pointer-events-none" viewBox="0 0 200 100" preserveAspectRatio="xMidYMax meet">
+            <defs>
+                <!-- Farbverlauf: Grün -> Gelb -> Rot -->
+                <linearGradient id="rpmGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#22c55e" />
+                    <stop offset="60%" stop-color="#eab308" />
+                    <stop offset="100%" stop-color="#ef4444" />
+                </linearGradient>
+            </defs>
+            
+            <!-- Grauer Hintergrund-Pfad (Die Skizzen-Form) -->
+            <path id="bgPath" d="M 20 90 C 20 30, 60 20, 100 20 C 140 20, 180 30, 180 90" fill="none" stroke="#f3f4f6" stroke-width="7" stroke-linecap="round" />
+            
+            <!-- Farbiger, animierter RPM-Pfad -->
+            <path id="rpmFill" class="rpm-path" d="M 20 90 C 20 30, 60 20, 100 20 C 140 20, 180 30, 180 90" fill="none" stroke="url(#rpmGradient)" stroke-width="7" stroke-linecap="round" />
+        </svg>
+
+        <!-- Live Km/h Anzeige in der Mitte -->
+        <div class="z-10 flex flex-col items-center mb-2">
+            <span id="speedValue" class="text-8xl md:text-[9rem] font-black italic tracking-tighter text-gray-900 leading-none">0</span>
+            <span class="text-2xl md:text-3xl font-bold text-gray-400 uppercase tracking-widest mt-2">km/h</span>
+        </div>
+        
+        <!-- Kleine Info-Anzeige für die berechneten RPM (Optional, aber hilfreich zur Kontrolle) -->
+        <div class="absolute bottom-4 left-6 text-gray-400 text-sm font-bold">
+            Live RPM: <span id="debugRpm">0</span>
+        </div>
+    </div>
+
+    <!-- EINSTELLUNGEN FENSTER (Modal) -->
+    <div id="settingsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <!-- Dunkler Hintergrund Blur -->
+        <div class="absolute inset-0 bg-black/20 backdrop-blur-sm"></div>
+        
+        <!-- Das eigentliche Einstellungs-Panel -->
+        <div class="glass-panel relative w-full max-w-md p-8 rounded-3xl shadow-2xl border border-white/50 flex flex-col gap-6 transform scale-95 transition-transform duration-300" id="settingsCard">
+            <h2 class="text-2xl font-black italic text-gray-800 uppercase tracking-wide">Einstellungen</h2>
+            
+            <div class="flex flex-col gap-4">
+                <!-- Reifengröße -->
+                <div class="flex items-center justify-between">
+                    <label class="font-bold text-gray-700">Reifengröße:</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="inputTireSize" value="19" step="0.5" class="w-24 px-3 py-2 text-center font-bold bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-800">
+                        <span class="font-bold text-gray-500">Zoll</span>
+                    </div>
+                </div>
+
+                <!-- Max RPM -->
+                <div class="flex items-center justify-between">
+                    <label class="font-bold text-gray-700">Max. RPM:</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="inputMaxRpm" value="10000" min="10" max="20000" class="w-24 px-3 py-2 text-center font-bold bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-800">
+                    </div>
+                </div>
+
+                <hr class="border-gray-200 my-2">
+
+                <!-- GPS Anfrage Button -->
+                <button id="btnRequestGps" class="w-full py-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition-colors flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                    </svg>
+                    GPS: Anfrage senden
+                </button>
+                <div id="gpsStatus" class="text-xs text-center text-gray-500 font-medium">Status: Wartend...</div>
+
+                <!-- Simulierter Slider zum Testen ohne sich bewegen zu müssen -->
+                <div class="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                    <label class="text-xs text-blue-800 font-bold uppercase mb-2 block">Test-Schieberegler (Simulation)</label>
+                    <input type="range" id="simSlider" min="0" max="150" value="0" class="w-full">
+                </div>
+            </div>
+
+            <!-- Fertig = Speichern Knopf -->
+            <button id="btnSaveClose" class="mt-2 w-full py-4 bg-gray-900 hover:bg-black text-white font-black italic uppercase rounded-xl transition-colors shadow-lg">
+                Fertig
             </button>
-        </div>
-
-        <!-- Center Tacho & Gauge Layer -->
-        <div class="center-display">
-            <div class="gauge-canvas-wrapper">
-                <canvas id="gaugeCanvas"></canvas>
-            </div>
-            <div class="speed-value-container">
-                <div class="speed-number" id="speedDisplay">0</div>
-                <div class="speed-unit">km/h</div>
-            </div>
-        </div>
-
-        <!-- Bottom Info -->
-        <div class="bottom-bar">
-            <div class="status-pill">
-                <div class="status-dot" id="gpsStatusDot"></div>
-                <span id="gpsStatusText">GPS OFF</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Manual Simulator -->
-    <div class="manual-control-bar" id="manualBar">
-        <span style="font-family: 'Teko', sans-serif; font-size: 1.2rem; letter-spacing: 0.1em; color: var(--text-muted);">SIM</span>
-        <input type="range" id="manualSpeedSlider" min="0" max="200" value="0" style="flex:1;">
-        <span id="manualSliderVal">0</span>
-    </div>
-
-    <!-- Settings Overlay -->
-    <div class="modal-overlay" id="settingsModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>EINSTELLUNGEN</h3>
-                <button class="close-btn" id="closeSettings">✕</button>
-            </div>
-
-            <div class="setting-group">
-                <div class="setting-row">
-                    <span>GPS Telemetrie</span>
-                    <label class="switch">
-                        <input type="checkbox" id="gpsToggle">
-                        <span class="slider-switch"></span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="setting-group">
-                <label>Radgröße (Zoll)</label>
-                <div style="display: flex; gap: 10px;">
-                    <select id="tirePreset" style="flex: 2;">
-                        <option value="10">10" (Scooter)</option>
-                        <option value="19">19" (MX Hinten)</option>
-                        <option value="21">21" (MX Vorne)</option>
-                        <option value="28" selected>28" (Straße)</option>
-                        <option value="custom">Custom</option>
-                    </select>
-                    <input type="number" id="customTireSize" value="28" min="4" max="50" style="flex: 1;" disabled>
-                </div>
-            </div>
-
-            <div class="setting-group">
-                <div class="setting-row">
-                    <label>Redline Limit (RPM)</label>
-                    <span id="redlineValText" style="font-family:'Teko', sans-serif; font-size: 1.5rem; color: var(--text-main);">10000</span>
-                </div>
-                <input type="range" id="redlineSlider" min="10" max="10000" step="10" value="10000">
-            </div>
-
-            <div class="setting-group">
-                <div class="setting-row">
-                    <span>HUD Spiegelmodus</span>
-                    <label class="switch">
-                        <input type="checkbox" id="hudToggle">
-                        <span class="slider-switch"></span>
-                    </label>
-                </div>
-            </div>
-
-            <button class="btn-primary" id="saveAndClose">Bestätigen</button>
         </div>
     </div>
 
     <script>
-        // Core State
-        let currentSpeed = 0;
-        let displaySpeed = 0;
-        let currentRpm = 0;
-        let displayRpm = 0;
-        let maxRpmLimit = 10000;
-        let tireSizeInches = 28;
-        let gpsActive = false;
+        // --- Variablen & State ---
+        let currentSpeedKmh = 0;
+        let tireSizeZoll = 19;
+        let maxRpm = 10000;
         let gpsWatchId = null;
+        let pathLength = 0;
 
-        // Elements
-        const speedDisplay = document.getElementById('speedDisplay');
-        const rpmTextDisplay = document.getElementById('rpmTextDisplay');
-        const canvas = document.getElementById('gaugeCanvas');
-        const ctx = canvas.getContext('2d');
-        const manualBar = document.getElementById('manualBar');
-        const manualSpeedSlider = document.getElementById('manualSpeedSlider');
-        const manualSliderVal = document.getElementById('manualSliderVal');
+        // --- DOM Elemente ---
+        const rpmFill = document.getElementById('rpmFill');
+        const speedValue = document.getElementById('speedValue');
+        const debugRpm = document.getElementById('debugRpm');
         
         const settingsModal = document.getElementById('settingsModal');
-        const openSettingsBtn = document.getElementById('openSettings');
-        const closeSettingsBtn = document.getElementById('closeSettings');
-        const saveAndCloseBtn = document.getElementById('saveAndClose');
-        const gpsToggle = document.getElementById('gpsToggle');
-        const hudToggle = document.getElementById('hudToggle');
-        const tirePreset = document.getElementById('tirePreset');
-        const customTireSize = document.getElementById('customTireSize');
-        const redlineSlider = document.getElementById('redlineSlider');
-        const redlineValText = document.getElementById('redlineValText');
-        const gpsStatusDot = document.getElementById('gpsStatusDot');
-        const gpsStatusText = document.getElementById('gpsStatusText');
+        const settingsCard = document.getElementById('settingsCard');
+        const btnOpenSettings = document.getElementById('btnOpenSettings');
+        const btnSaveClose = document.getElementById('btnSaveClose');
+        const btnRequestGps = document.getElementById('btnRequestGps');
+        const gpsStatus = document.getElementById('gpsStatus');
+        
+        const inputTireSize = document.getElementById('inputTireSize');
+        const inputMaxRpm = document.getElementById('inputMaxRpm');
+        const simSlider = document.getElementById('simSlider');
 
-        // Canvas Setup (High DPI)
-        function resizeCanvas() {
-            const dpr = window.devicePixelRatio || 1;
-            const rect = canvas.getBoundingClientRect();
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-            ctx.scale(dpr, dpr);
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        function calculateRPM(speedKmh, tireInches) {
-            if (speedKmh <= 0 || tireInches <= 0) return 0;
-            return (speedKmh * 1000 / 60) / (Math.PI * tireInches * 0.0254);
+        // --- Initialisierung der SVG Pfad-Länge ---
+        function initSvgPath() {
+            // Holt die exakte Länge der gezeichneten Kurve für die Animation
+            pathLength = rpmFill.getTotalLength();
+            rpmFill.style.strokeDasharray = pathLength;
+            rpmFill.style.strokeDashoffset = pathLength; // Startet leer
         }
 
-        // Segmented Arc for Light Mode
-        function drawGauge() {
-            const rect = canvas.getBoundingClientRect();
-            const width = rect.width;
-            const height = rect.height;
-            ctx.clearRect(0, 0, width, height);
+        // --- Berechnung & UI Update ---
+        function updateDashboard() {
+            // 1. Text für Km/h updaten
+            speedValue.textContent = Math.round(currentSpeedKmh);
 
-            const centerX = width / 2;
-            const centerY = height * 0.65; 
-            // Radius etwas kleiner für "normale" Dimensionen
-            const radius = Math.min(width * 0.38, height * 0.48);
+            // 2. RPM ausrechnen anhand der Reifengröße[span_3](start_span)[span_3](end_span)
+            // Durchmesser in Meter: Zoll * 0.0254
+            const durchmesserM = tireSizeZoll * 0.0254;
+            // Umfang (Kreis) in Meter: Durchmesser * PI
+            const umfang = durchmesserM * Math.PI;
+            // Geschwindigkeit in m/s
+            const speedMs = currentSpeedKmh / 3.6;
+            // Umdrehungen pro Sekunde (Revs per second)
+            const rps = speedMs / umfang;
+            // RPM (Revs per minute)
+            const calculatedRpm = rps * 60;
+
+            debugRpm.textContent = Math.round(calculatedRpm);
+
+            // 3. Farbigen Bogen aktualisieren[span_4](start_span)[span_4](end_span)
+            // Anteil an der eingestellten Max RPM berechnen
+            let fillPercentage = calculatedRpm / maxRpm;
             
-            const startAngle = Math.PI * 0.8;
-            const endAngle = Math.PI * 2.2;
-            const totalAngleSpan = endAngle - startAngle;
+            // Begrenzung zwischen 0 und 1 (0% bis 100%)
+            if (fillPercentage < 0) fillPercentage = 0;
+            if (fillPercentage > 1) fillPercentage = 1;
 
-            const totalSegments = 50; 
-            const segmentGap = 0.03; 
-            const segmentSpan = (totalAngleSpan / totalSegments) - segmentGap;
-
-            // 1. Inaktiver Hintergrund (Dunkelgrau für hellen Modus)
-            for (let i = 0; i < totalSegments; i++) {
-                const a1 = startAngle + i * (segmentSpan + segmentGap);
-                const a2 = a1 + segmentSpan;
-                
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, radius, a1, a2);
-                ctx.lineWidth = 10; /* Etwas schmaler */
-                ctx.lineCap = 'butt';
-                ctx.strokeStyle = 'rgba(15, 23, 42, 0.08)'; /* Dezent auf Weiß */
-                ctx.stroke();
-            }
-
-            // 2. Aktive Segmente (Kräftige Farben, kein extremer Glow)
-            const rpmRatio = Math.min(Math.max(displayRpm / maxRpmLimit, 0), 1);
-            if (rpmRatio > 0) {
-                const activeSegments = Math.floor(rpmRatio * totalSegments);
-                
-                for (let i = 0; i < activeSegments; i++) {
-                    const a1 = startAngle + i * (segmentSpan + segmentGap);
-                    const a2 = a1 + segmentSpan;
-                    const pointRatio = i / totalSegments;
-
-                    ctx.beginPath();
-                    ctx.arc(centerX, centerY, radius, a1, a2);
-                    ctx.lineWidth = 12; 
-                    ctx.lineCap = 'round'; 
-                    
-                    let segmentColor;
-                    if (pointRatio < 0.65) {
-                        segmentColor = '#10b981'; // Green
-                    } else if (pointRatio < 0.85) {
-                        segmentColor = '#f59e0b'; // Yellow
-                    } else {
-                        segmentColor = '#ef4444'; // Red
-                    }
-
-                    ctx.strokeStyle = segmentColor;
-                    ctx.stroke();
-                }
-            }
+            // Offset berechnen (pathLength ist leer, 0 ist voll)
+            const offset = pathLength - (pathLength * fillPercentage);
+            rpmFill.style.strokeDashoffset = offset;
         }
 
-        // Render Loop
-        function update() {
-            displaySpeed += (currentSpeed - displaySpeed) * 0.15;
-            displayRpm += (currentRpm - displayRpm) * 0.15;
-
-            speedDisplay.textContent = Math.round(displaySpeed);
-            rpmTextDisplay.innerHTML = `${Math.round(displayRpm)} <span>RPM</span>`;
-
-            drawGauge();
-            requestAnimationFrame(update);
-        }
-        requestAnimationFrame(update);
-
-        // --- Event Listeners ---
-        manualSpeedSlider.addEventListener('input', (e) => {
-            if (!gpsActive) {
-                currentSpeed = parseFloat(e.target.value);
-                manualSliderVal.textContent = Math.round(currentSpeed);
-                currentRpm = calculateRPM(currentSpeed, tireSizeInches);
-            }
-        });
-
-        const toggleModal = (show) => {
-            if(show) settingsModal.classList.add('open');
-            else settingsModal.classList.remove('open');
-        };
-        openSettingsBtn.addEventListener('click', () => toggleModal(true));
-        closeSettingsBtn.addEventListener('click', () => toggleModal(false));
-        saveAndCloseBtn.addEventListener('click', () => toggleModal(false));
-
-        tirePreset.addEventListener('change', (e) => {
-            if (e.target.value === 'custom') {
-                customTireSize.disabled = false;
-                customTireSize.focus();
-                tireSizeInches = parseFloat(customTireSize.value) || 28;
-            } else {
-                customTireSize.disabled = true;
-                tireSizeInches = parseFloat(e.target.value);
-                customTireSize.value = tireSizeInches;
-            }
-            currentRpm = calculateRPM(currentSpeed, tireSizeInches);
-        });
-
-        customTireSize.addEventListener('input', (e) => {
-            tireSizeInches = parseFloat(e.target.value) || 28;
-            currentRpm = calculateRPM(currentSpeed, tireSizeInches);
-        });
-
-        redlineSlider.addEventListener('input', (e) => {
-            maxRpmLimit = parseInt(e.target.value);
-            redlineValText.textContent = maxRpmLimit;
-        });
-
-        hudToggle.addEventListener('change', (e) => {
-            if (e.target.checked) document.body.classList.add('hud-mode');
-            else document.body.classList.remove('hud-mode');
-        });
-
-        gpsToggle.addEventListener('change', (e) => {
-            gpsActive = e.target.checked;
-            if (gpsActive) startGpsTracking();
-            else stopGpsTracking();
-        });
-
-        function startGpsTracking() {
-            if (!navigator.geolocation) {
-                alert('GPS wird nicht unterstützt.');
-                gpsToggle.checked = false;
-                gpsActive = false;
+        // --- GPS Logik ---
+        function requestGps() {
+            if (!("geolocation" in navigator)) {
+                gpsStatus.textContent = "GPS wird vom Gerät nicht unterstützt.";
+                gpsStatus.classList.add("text-red-500");
                 return;
             }
 
-            gpsStatusText.textContent = 'GPS SUCHE';
-            manualBar.classList.add('hidden');
+            gpsStatus.textContent = "Warte auf iPhone/Geräte Erlaubnis...";
+            gpsStatus.classList.remove("text-red-500", "text-green-500");
 
+            // GPS Anfrage senden[span_5](start_span)[span_5](end_span)
             gpsWatchId = navigator.geolocation.watchPosition(
                 (position) => {
-                    gpsStatusDot.classList.add('active');
-                    gpsStatusText.textContent = 'GPS VERBUNDEN';
+                    gpsStatus.textContent = "GPS Aktiv - Empfange Daten";
+                    gpsStatus.classList.add("text-green-500");
                     
-                    const speedMs = position.coords.speed;
-                    currentSpeed = (speedMs !== null && speedMs >= 0) ? (speedMs * 3.6) : 0;
-                    currentRpm = calculateRPM(currentSpeed, tireSizeInches);
+                    // position.coords.speed ist in m/s, umrechnen in km/h
+                    let speed = position.coords.speed;
+                    if (speed === null) speed = 0; // Fallback, falls kein Speed gesendet wird
+                    
+                    currentSpeedKmh = speed * 3.6;
+                    
+                    // Sim-Slider anpassen, damit UI synchron bleibt
+                    simSlider.value = currentSpeedKmh;
+                    updateDashboard();
                 },
                 (error) => {
-                    gpsStatusDot.classList.remove('active');
-                    gpsStatusText.textContent = 'KEIN SIGNAL';
+                    gpsStatus.textContent = "Fehler: " + error.message;
+                    gpsStatus.classList.add("text-red-500");
                 },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                {
+                    enableHighAccuracy: true, // Zwingend für genauen Live-Standort[span_6](start_span)[span_6](end_span)
+                    maximumAge: 0,
+                    timeout: 5000
+                }
             );
         }
 
-        function stopGpsTracking() {
-            if (gpsWatchId !== null) {
-                navigator.geolocation.clearWatch(gpsWatchId);
-                gpsWatchId = null;
-            }
-            gpsStatusDot.classList.remove('active');
-            gpsStatusText.textContent = 'GPS OFF';
-            manualBar.classList.remove('hidden');
-        }
+        // --- Event Listener ---
+        
+        // Modal öffnen
+        btnOpenSettings.addEventListener('click', () => {
+            settingsModal.classList.remove('opacity-0', 'pointer-events-none');
+            settingsCard.classList.remove('scale-95');
+            settingsCard.classList.add('scale-100');
+        });
+
+        // Modal schließen & Speichern (Fertig Knopf)[span_7](start_span)[span_7](end_span)
+        btnSaveClose.addEventListener('click', () => {
+            // Werte übernehmen
+            tireSizeZoll = parseFloat(inputTireSize.value) || 19;
+            maxRpm = parseFloat(inputMaxRpm.value) || 10000;
+            
+            // Modal ausblenden
+            settingsModal.classList.add('opacity-0', 'pointer-events-none');
+            settingsCard.classList.remove('scale-100');
+            settingsCard.classList.add('scale-95');
+            
+            // UI sofort mit neuen Settings updaten
+            updateDashboard();
+        });
+
+        // GPS Button
+        btnRequestGps.addEventListener('click', requestGps);
+
+        // Simulator Slider (Zum Testen am Schreibtisch)
+        simSlider.addEventListener('input', (e) => {
+            currentSpeedKmh = parseFloat(e.target.value);
+            updateDashboard();
+        });
+
+        // --- Start ---
+        initSvgPath();
+        updateDashboard();
     </script>
 </body>
 </html>
