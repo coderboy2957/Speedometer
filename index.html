@@ -5,21 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Stark Varg Tacho</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Zwingend Montserrat in Black (900) und Italic -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@1,900&display=swap" rel="stylesheet">
+    
     <style>
-        /* Stark Varg ähnlicher, sportlicher Font */
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,900;1,900&display=swap');
-        
         html, body {
             height: 100%;
             width: 100%;
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background-color: #f3f4f6;
-        }
-
-        body {
+            background-color: #f3f4f6; /* Helle UI Vorgabe */
             font-family: 'Montserrat', sans-serif;
+            font-style: italic;
+            font-weight: 900;
             user-select: none;
             -webkit-user-select: none;
         }
@@ -30,119 +31,121 @@
         }
 
         .glass-panel {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        /* Verstecke Pfeile bei Input-Nummern für sauberes Design */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
         }
     </style>
 </head>
-<body class="flex items-center justify-center p-2 sm:p-4 w-screen h-screen">
+<body class="flex items-center justify-center p-4 sm:p-8 w-screen h-screen">
 
-    <!-- HAUPTANSICHT (Füllt fast 100% des Bildschirms aus, ideal für Tablets) -->
-    <div class="relative w-full h-full bg-white rounded-[2rem] sm:rounded-[3.5rem] shadow-2xl overflow-hidden flex flex-col items-center justify-center p-4 border border-gray-100">
+    <!-- Haupt-Container Shape: großes Rechteck, stark abgerundet, weißer BG, Rahmen -->
+    <div class="relative w-full h-full max-w-6xl max-h-[800px] bg-white rounded-[4rem] border-4 border-gray-200 shadow-2xl flex flex-col items-center justify-center p-4 overflow-hidden">
         
         <!-- Einstellungen Knopf (Oben Rechts) -->
-        <button id="btnOpenSettings" class="absolute top-6 right-6 p-3 text-gray-300 hover:text-gray-800 transition-colors z-20 cursor-pointer">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 sm:h-16 sm:w-16" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+        <button id="btnOpenSettings" class="absolute top-8 right-10 p-2 text-black hover:text-gray-500 transition-colors z-20 cursor-pointer">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 sm:h-12 sm:w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
         </button>
 
-        <!-- SVG für die stufenlose RPM Anzeige -->
-        <svg class="absolute inset-0 w-full h-full pointer-events-none p-4" viewBox="0 0 200 110" preserveAspectRatio="xMidYMid meet">
+        <!-- SVG für die stufenlose RPM Anzeige mit der exakten geometrischen Form -->
+        <svg class="absolute inset-0 w-full h-full pointer-events-none p-4 sm:p-10" viewBox="0 0 200 100" preserveAspectRatio="xMidYMid meet">
             <defs>
                 <linearGradient id="rpmGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stop-color="#22c55e" /> <!-- Grün -->
-                    <stop offset="60%" stop-color="#eab308" /> <!-- Gelb -->
+                    <stop offset="50%" stop-color="#eab308" /> <!-- Gelb -->
                     <stop offset="100%" stop-color="#ef4444" /> <!-- Rot -->
                 </linearGradient>
             </defs>
             
-            <!-- Grauer Hintergrund-Pfad -->
-            <path id="bgPath" d="M 15 95 C 15 25, 55 12, 100 12 C 145 12, 185 25, 185 95" fill="none" stroke="#f3f4f6" stroke-width="8" stroke-linecap="round" />
+            <!-- Grauer Hintergrund-Pfad (Die Skizzen-Form) -->
+            <path id="bgPath" d="M 15 85 L 45 30 Q 55 15 75 15 L 125 15 Q 145 15 155 30 L 185 85" fill="none" stroke="#e5e7eb" stroke-width="12" stroke-linecap="round" />
             
             <!-- Farbiger, animierter RPM-Pfad -->
-            <path id="rpmFill" class="rpm-path" d="M 15 95 C 15 25, 55 12, 100 12 C 145 12, 185 25, 185 95" fill="none" stroke="url(#rpmGradient)" stroke-width="8" stroke-linecap="round" />
+            <path id="rpmFill" class="rpm-path" d="M 15 85 L 45 30 Q 55 15 75 15 L 125 15 Q 145 15 155 30 L 185 85" fill="none" stroke="url(#rpmGradient)" stroke-width="12" stroke-linecap="round" />
         </svg>
 
-        <!-- Live Km/h Anzeige in der Mitte -->
-        <div class="z-10 flex flex-col items-center justify-center mt-12">
-            <!-- Nutze vmin für perfekte Skalierung in Hoch- und Querformat -->
-            <span id="speedValue" class="text-[30vmin] font-black italic tracking-tighter text-gray-900 leading-none" style="text-shadow: 0 10px 30px rgba(0,0,0,0.05);">0</span>
-            <span class="text-3xl sm:text-5xl font-extrabold text-gray-400 uppercase tracking-widest mt-2 sm:mt-4">km/h</span>
+        <!-- Live Km/h Anzeige in der Mitte - Riesig, kein km/h Text darunter -->
+        <div class="z-10 flex items-center justify-center mt-10">
+            <!-- Extrem große Schrift, schräg, massiv (Montserrat 900 Italic ist über body definiert) -->
+            <span id="speedValue" class="text-[35vmin] text-black leading-none tracking-tighter" style="text-shadow: 0 15px 40px rgba(0,0,0,0.1);">100</span>
         </div>
         
-        <!-- Kleine RPM Info unten links zur Kontrolle -->
-        <div class="absolute bottom-6 left-8 text-gray-400 text-base sm:text-xl font-bold">
-            Live RPM: <span id="debugRpm">0</span>
-        </div>
+    </div>
+
+    <!-- Dezenter Slider am unteren Rand zum Testen (Desktop/ohne GPS Bewegung) -->
+    <div class="fixed bottom-4 left-1/2 transform -translate-x-1/2 w-64 opacity-30 hover:opacity-100 transition-opacity z-10 flex flex-col items-center">
+        <label class="text-[10px] uppercase text-gray-500 mb-1 font-sans not-italic font-bold">Test-Simulator (km/h)</label>
+        <input type="range" id="simSlider" min="0" max="150" value="100" class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer">
     </div>
 
     <!-- EINSTELLUNGEN FENSTER (Modal) -->
     <div id="settingsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
-        <!-- Dunkler Hintergrund Blur -->
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+        <!-- Blur Overlay -->
+        <div class="absolute inset-0 bg-black/20 backdrop-blur-md"></div>
         
-        <!-- Das Einstellungs-Panel (Glassmorphism) -->
-        <div class="glass-panel relative w-full max-w-lg p-8 sm:p-10 rounded-3xl border border-white/60 flex flex-col gap-6 transform scale-95 transition-transform duration-300" id="settingsCard">
-            <h2 class="text-3xl font-black italic text-gray-800 uppercase tracking-wide">Einstellungen</h2>
+        <!-- Das Modal-Fenster -->
+        <div class="glass-panel relative w-full max-w-lg p-8 sm:p-12 rounded-[3rem] border-2 border-white shadow-2xl flex flex-col items-center gap-8 transform scale-95 transition-transform duration-300" id="settingsCard">
             
-            <div class="flex flex-col gap-5 text-lg">
-                <!-- Reifengröße -->
-                <div class="flex items-center justify-between">
-                    <label class="font-bold text-gray-700">Reifengröße:</label>
-                    <div class="flex items-center gap-3">
-                        <input type="number" id="inputTireSize" value="19" step="0.5" class="w-28 px-4 py-3 text-center font-bold bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-800 text-xl">
-                        <span class="font-bold text-gray-500">Zoll</span>
+            <div class="w-full flex flex-col gap-6 text-xl sm:text-2xl text-black">
+                
+                <!-- Zeile 1: Reifengröße -->
+                <div class="flex items-center justify-between w-full border-b border-gray-300/50 pb-4">
+                    <span>Reifengröße:</span>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="inputTireSize" value="19" step="0.5" class="w-20 bg-transparent border-b-2 border-black text-center focus:outline-none focus:border-gray-500">
+                        <span>Zoll</span>
                     </div>
                 </div>
 
-                <!-- Max RPM -->
-                <div class="flex items-center justify-between">
-                    <label class="font-bold text-gray-700">Max. RPM:</label>
-                    <div class="flex items-center gap-3">
-                        <input type="number" id="inputMaxRpm" value="10000" min="10" max="20000" class="w-28 px-4 py-3 text-center font-bold bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-800 text-xl">
+                <!-- Zeile 2: Max. RPM -->
+                <div class="flex items-center justify-between w-full border-b border-gray-300/50 pb-4">
+                    <span>Max. RPM:</span>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="inputMaxRpm" value="10000" min="10" max="20000" class="w-28 bg-transparent border-b-2 border-black text-center focus:outline-none focus:border-gray-500">
+                        <span class="text-sm text-gray-500 ml-2">10-10000</span>
                     </div>
                 </div>
 
-                <hr class="border-gray-200 my-1">
-
-                <!-- GPS Anfrage Button -->
-                <button id="btnRequestGps" class="w-full py-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-lg rounded-2xl transition-colors flex items-center justify-center gap-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
-                    </svg>
-                    GPS: Anfrage senden
-                </button>
-                <div id="gpsStatus" class="text-sm text-center text-gray-500 font-semibold">Status: Wartend...</div>
-
-                <!-- Simulierter Slider zum Testen am Schreibtisch -->
-                <div class="p-4 bg-blue-50 rounded-2xl border border-blue-100 mt-2">
-                    <label class="text-xs text-blue-800 font-bold uppercase mb-3 block tracking-wider">Test-Schieberegler (Simulation)</label>
-                    <input type="range" id="simSlider" min="0" max="150" value="0" class="w-full h-3 bg-blue-200 rounded-lg appearance-none cursor-pointer">
+                <!-- Zeile 3: GPS Button -->
+                <div class="w-full pt-2 flex flex-col items-center">
+                    <button id="btnRequestGps" class="text-xl sm:text-2xl hover:text-gray-500 transition-colors border-b-2 border-transparent hover:border-gray-500 cursor-pointer">
+                        GPS: Anfrage senden
+                    </button>
+                    <span id="gpsStatus" class="text-xs text-gray-500 mt-2 font-sans not-italic font-normal">Wartet auf Input</span>
                 </div>
             </div>
 
-            <!-- Fertig Knopf zum Speichern und Schließen -->
-            <button id="btnSaveClose" class="mt-4 w-full py-5 bg-gray-900 hover:bg-black text-white font-black italic uppercase text-xl rounded-2xl transition-colors shadow-xl">
+            <!-- Button unten mittig: Fertig -->
+            <button id="btnSaveClose" class="mt-4 px-12 py-3 bg-white border-2 border-black text-black hover:bg-black hover:text-white transition-colors rounded-full text-xl cursor-pointer">
                 Fertig
             </button>
         </div>
     </div>
 
     <script>
-        // --- Variablen & State ---
-        let currentSpeedKmh = 0;
+        // State
+        let currentSpeedKmh = 100; // Startwert passend zur Skizze
         let tireSizeZoll = 19;
         let maxRpm = 10000;
         let gpsWatchId = null;
         let pathLength = 0;
 
-        // --- DOM Elemente ---
+        // DOM Elements
         const rpmFill = document.getElementById('rpmFill');
         const speedValue = document.getElementById('speedValue');
-        const debugRpm = document.getElementById('debugRpm');
         
         const settingsModal = document.getElementById('settingsModal');
         const settingsCard = document.getElementById('settingsCard');
@@ -155,139 +158,106 @@
         const inputMaxRpm = document.getElementById('inputMaxRpm');
         const simSlider = document.getElementById('simSlider');
 
-        // Holt die exakte Länge der gezeichneten Kurve für die Animation
         function initSvgPath() {
             pathLength = rpmFill.getTotalLength();
             rpmFill.style.strokeDasharray = pathLength;
-            // Setze Offset auf pathLength, damit die Linie initial unsichtbar (leer) ist
             rpmFill.style.strokeDashoffset = pathLength; 
         }
 
-        // Hauptfunktion zur Berechnung und Aktualisierung der Anzeige
         function updateDashboard() {
-            // 1. Text für Km/h updaten (Ganze Zahl)
+            // Update Number (No km/h text as per prompt)
             speedValue.textContent = Math.round(currentSpeedKmh);
 
-            // 2. RPM berechnen
+            // Calculation Logic
+            // Geschwindigkeit m/s = km/h / 3.6
+            const speedMs = currentSpeedKmh / 3.6;
             // Durchmesser in Meter = Zoll * 0.0254
             const durchmesserM = tireSizeZoll * 0.0254;
             // Umfang = Durchmesser * PI
             const umfang = durchmesserM * Math.PI;
-            // Geschwindigkeit m/s = km/h / 3.6
-            const speedMs = currentSpeedKmh / 3.6;
             
-            // Umdrehungen pro Sekunde (RPS) = Strecke pro Sekunde / Radumfang
-            // Schutz vor Division durch 0 (falls Umfang extrem klein wäre)
-            const rps = umfang > 0 ? speedMs / umfang : 0;
-            
-            // RPM = RPS * 60
-            const calculatedRpm = rps * 60;
+            // RPM = Geschwindigkeit (m/s) / Umfang * 60
+            let calculatedRpm = 0;
+            if (umfang > 0) {
+                calculatedRpm = (speedMs / umfang) * 60;
+            }
 
-            // Debug-Anzeige aktualisieren
-            debugRpm.textContent = Math.round(calculatedRpm);
-
-            // 3. Farbigen Bogen aktualisieren
-            // Anteil an der eingestellten Max RPM berechnen
+            // SVG Line Fill
             let fillPercentage = calculatedRpm / maxRpm;
-            
-            // Begrenzung zwischen 0 und 1 (0% bis 100%)
             if (fillPercentage < 0) fillPercentage = 0;
             if (fillPercentage > 1) fillPercentage = 1;
 
-            // Offset berechnen: 
-            // pathLength (vollständiger offset) = leer
-            // 0 (kein offset) = komplett gefüllt
             const offset = pathLength - (pathLength * fillPercentage);
             rpmFill.style.strokeDashoffset = offset;
         }
 
-        // GPS anfragen und Live-Daten verarbeiten
         function requestGps() {
             if (!("geolocation" in navigator)) {
-                gpsStatus.textContent = "GPS wird vom Gerät nicht unterstützt.";
-                gpsStatus.classList.add("text-red-500");
+                gpsStatus.textContent = "Nicht unterstützt.";
                 return;
             }
 
-            gpsStatus.textContent = "Warte auf Erlaubnis...";
-            gpsStatus.classList.remove("text-red-500", "text-green-500");
-            gpsStatus.classList.add("text-gray-500");
+            gpsStatus.textContent = "Erlaubnis anfragen...";
 
-            // Alte Überwachung löschen, falls vorhanden
             if(gpsWatchId !== null) {
                 navigator.geolocation.clearWatch(gpsWatchId);
             }
 
             gpsWatchId = navigator.geolocation.watchPosition(
                 (position) => {
-                    gpsStatus.textContent = "GPS Aktiv - Empfange Daten";
-                    gpsStatus.classList.remove("text-gray-500", "text-red-500");
-                    gpsStatus.classList.add("text-green-500");
+                    gpsStatus.textContent = "Aktiv";
+                    gpsStatus.style.color = "#22c55e"; // Green
                     
-                    // position.coords.speed liefert m/s (kann null sein, wenn Gerät steht)
                     let speed = position.coords.speed;
                     if (speed === null) speed = 0;
                     
-                    // Umrechnung m/s in km/h
                     currentSpeedKmh = speed * 3.6;
-                    
-                    // Sim-Slider anpassen, damit UI synchron bleibt
                     simSlider.value = currentSpeedKmh;
-                    
-                    // Dashboard mit neuem Speed aktualisieren
                     updateDashboard();
                 },
                 (error) => {
                     gpsStatus.textContent = "Fehler: " + error.message;
-                    gpsStatus.classList.remove("text-gray-500", "text-green-500");
-                    gpsStatus.classList.add("text-red-500");
+                    gpsStatus.style.color = "#ef4444"; // Red
                 },
                 {
-                    enableHighAccuracy: true, // Zwingend für genaue Geschwindigkeitsdaten
+                    enableHighAccuracy: true,
                     maximumAge: 0,
                     timeout: 5000
                 }
             );
         }
 
-        // Modal öffnen
         btnOpenSettings.addEventListener('click', () => {
             settingsModal.classList.remove('opacity-0', 'pointer-events-none');
             settingsCard.classList.remove('scale-95');
             settingsCard.classList.add('scale-100');
         });
 
-        // Modal schließen & Speichern (Fertig Knopf)
         btnSaveClose.addEventListener('click', () => {
-            // Werte aus den Inputs übernehmen
             tireSizeZoll = parseFloat(inputTireSize.value) || 19;
             maxRpm = parseFloat(inputMaxRpm.value) || 10000;
             
-            // Modal ausblenden (Animation)
             settingsModal.classList.add('opacity-0', 'pointer-events-none');
             settingsCard.classList.remove('scale-100');
             settingsCard.classList.add('scale-95');
             
-            // Dashboard sofort mit neuen Einstellungen (Zoll/Max RPM) updaten
             updateDashboard();
         });
 
-        // GPS Button Event
         btnRequestGps.addEventListener('click', requestGps);
 
-        // Simulator Slider (Zum Testen am Schreibtisch ohne GPS-Bewegung)
+        // Simulation Slider
         simSlider.addEventListener('input', (e) => {
             currentSpeedKmh = parseFloat(e.target.value);
             updateDashboard();
         });
 
-        // Falls das Fenster die Größe ändert, berechne die SVG Länge neu
         window.addEventListener('resize', () => {
             initSvgPath();
             updateDashboard();
         });
 
-        // Start initialisieren
+        // Initialize App
         initSvgPath();
         updateDashboard();
     </script>
